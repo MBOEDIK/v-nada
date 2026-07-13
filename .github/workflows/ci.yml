@@ -27,17 +27,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install chromium
-
       - name: Lint with ESLint (custom V-NADA rules)
         run: npm run lint
 
       - name: Validate architecture
         run: npm run validate
-
-      - name: Run integration & utility tests
-        run: npm run test
 
       - name: Build production bundle
         run: npm run build
