@@ -1,9 +1,9 @@
 import './styles/main.css';
 import { initCamera, computeLipAspectRatio } from './utils/vision.js';
 import { initAudioStream, closeAudioStream, extractPitch } from './utils/audio.js';
-import { saveSession, getProfile, saveProfile } from './utils/db.js';
+import { getProfile } from './utils/db.js';
 
-const LAR_THRESHOLD = 0.3;
+const lar_threshold = 0.3;
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,9 +18,9 @@ const btnStart = $('btn-start');
 const btnStop = $('btn-stop');
 
 let cameraController = null;
-let larThreshold = LAR_THRESHOLD;
+let threshold = lar_threshold;
 let sessionActive = false;
-let sessionData = [];
+let audioInitialized = false;
 
 function updateLar(value) {
   larDisplay.textContent = value.toFixed(2);
@@ -45,33 +45,47 @@ function showError(show) {
 }
 
 async function onFaceLandmarks(landmarks) {
-  if (!sessionActive) return;
+  if (!sessionActive) {
+    return;
+  }
 
   const lar = computeLipAspectRatio(landmarks);
   updateLar(lar);
 
-  if (lar >= larThreshold) {
+  if (lar >= threshold) {
     showError(false);
+
+    if (!audioInitialized) {
+      await initAudioStream();
+      audioInitialized = true;
+    }
+
     const pitch = extractPitch();
     updatePitch(pitch);
-
-    sessionData.push({ lar, pitch, timestamp: Date.now() });
   } else {
     showError(true);
-    closeAudioStream();
+    if (audioInitialized) {
+      closeAudioStream();
+      audioInitialized = false;
+    }
   }
 }
 
 async function startSession(userId) {
   sessionActive = true;
-  sessionData = [];
+  audioInitialized = false;
 
   const profile = await getProfile(userId);
   if (profile) {
-    larThreshold = profile.lar_threshold?.value ?? LAR_THRESHOLD;
+    threshold = profile.lar_threshold?.value ?? lar_threshold;
   }
 
   showError(false);
+  updateAccuracy(0);
+  updateStars(0);
+
+  overlayCanvas.width = cameraFeed.clientWidth;
+  overlayCanvas.height = cameraFeed.clientHeight;
 
   cameraController = initCamera(cameraFeed, onFaceLandmarks);
   cameraController.start();
@@ -85,7 +99,11 @@ function stopSession() {
     cameraController = null;
   }
 
-  closeAudioStream();
+  if (audioInitialized) {
+    closeAudioStream();
+    audioInitialized = false;
+  }
+
   showError(false);
 }
 

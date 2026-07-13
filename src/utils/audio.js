@@ -62,17 +62,17 @@ function autocorrelationPitch(buffer, sampleRate) {
     }
   }
 
-  if (bestLag === -1) return 0;
+  if (bestLag === -1) {return 0;}
   return sampleRate / bestLag;
 }
 
 export function extractPitch() {
-  if (!analyserNode || !dataArray) return 0;
+  if (!analyserNode || !dataArray) {return 0;}
 
   analyserNode.getFloatTimeDomainData(dataArray);
 
   const rms = computeRMS(dataArray);
-  if (rms < NOISE_FLOOR_RMS) return 0;
+  if (rms < NOISE_FLOOR_RMS) {return 0;}
 
   const sampleRate = audioContext.sampleRate;
   return autocorrelationPitch(dataArray, sampleRate);

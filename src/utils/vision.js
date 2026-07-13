@@ -14,7 +14,7 @@ const FRAME_INTERVAL = 1000 / TARGET_FPS;
 let lastFrameTime = 0;
 
 function throttleFrame(timestamp) {
-  if (timestamp - lastFrameTime < FRAME_INTERVAL) return false;
+  if (timestamp - lastFrameTime < FRAME_INTERVAL) {return false;}
   lastFrameTime = timestamp;
   return true;
 }
@@ -32,7 +32,7 @@ export function computeLipAspectRatio(landmarks) {
   const vertical = computeEuclideanDistance(pTop, pBottom);
   const horizontal = computeEuclideanDistance(pLeft, pRight);
 
-  if (horizontal === 0) return 0;
+  if (horizontal === 0) {return 0;}
   return vertical / horizontal;
 }
 
@@ -51,7 +51,7 @@ export function initCamera(videoElement, onResults) {
 
   faceMesh.onResults((results) => {
     const now = performance.now();
-    if (!throttleFrame(now)) return;
+    if (!throttleFrame(now)) {return;}
 
     if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
       onResults(results.multiFaceLandmarks[0]);
