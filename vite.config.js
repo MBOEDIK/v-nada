@@ -15,6 +15,7 @@ export default defineConfig({
         orientation: 'portrait'
       },
       workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.destination === 'script' || request.destination === 'style',
