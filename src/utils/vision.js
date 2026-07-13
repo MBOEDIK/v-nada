@@ -39,7 +39,7 @@ export function computeLipAspectRatio(landmarks) {
 export function initCamera(videoElement, onResults) {
   const faceMesh = new FaceMesh({
     locateFile: (file) =>
-      `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
+      `/mediapipe/${file}`,
   });
 
   faceMesh.setOptions({
