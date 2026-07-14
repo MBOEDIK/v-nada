@@ -178,18 +178,34 @@ export async function closeAudioStream() {
 
 /**
  * Compute RMS (Root Mean Square) amplitude of a time-domain buffer.
- * Used as a voice activity detector — signals below NOISE_FLOOR_RMS
- * are treated as silence to save autocorrelation CPU cycles.
+ * Used as a noise floor gate — signals below NOISE_FLOOR_RMS are
+ * treated as silence, skipping the expensive autocorrelation loop.
  *
- * @param {Float32Array} buffer - Time-domain sample buffer
+ * Formula: RMS = sqrt( (1/N) * Σ x(i)² )   for i = 0..N-1
+ *
+ * Performance notes:
+ *   - Single-pass `for` loop (V8 optimises traditional loops over .reduce())
+ *   - Zero heap allocation — no objects, arrays, or closures created
+ *   - Input is never mutated (read-only)
+ *
+ * @param {Float32Array|number[]} buffer - Time-domain sample buffer
  * @returns {number} RMS amplitude [0.0, 1.0]
  */
-function computeRMS(buffer) {
+export function computeRMS(buffer) {
+  const n = buffer.length;
+
+  // Edge case: empty or falsy buffer → return 0 immediately.
+  // Prevents division-by-zero (0/0 = NaN → sqrt(NaN) = NaN).
+  if (!n) {
+    return 0;
+  }
+
   let sum = 0;
-  for (let i = 0; i < buffer.length; i++) {
+  for (let i = 0; i < n; i++) {
     sum += buffer[i] * buffer[i];
   }
-  return Math.sqrt(sum / buffer.length);
+
+  return Math.sqrt(sum / n);
 }
 
 // ── DSP: Normalized Autocorrelation Pitch Detection ─────────────────
