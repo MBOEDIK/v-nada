@@ -3,6 +3,7 @@ import { initCamera, computeLipAspectRatio } from './utils/vision.js';
 import { initAudioStream, closeAudioStream, extractPitch } from './utils/audio.js';
 import { getProfile } from './utils/db.js';
 import gatekeeper, { STATES } from './utils/gatekeeper.js';
+import VocaToneGame from './components/game.js';
 
 /** Default LAR threshold for vowel /a/ (fallback when no IndexedDB profile). */
 const DEFAULT_LAR_THRESHOLD = 0.3;
@@ -31,9 +32,11 @@ const errorScreen = $('error-screen');
 const btnStart = $('btn-start');
 const btnStop = $('btn-stop');
 const cameraView = $('camera-view');
+const gameCanvas = $('game-canvas');
 
 // ── Session State ───────────────────────────────────────────────────
 let camera_controller = null;
+let game = null;
 let threshold = DEFAULT_LAR_THRESHOLD;
 let session_active = false;
 let audio_initialized = false;
@@ -180,6 +183,13 @@ function executeHardReset() {
     audio_initialized = false;
   }
 
+  // Stop VocaTone game loop
+  if (game) {
+    game.destroy();
+    game = null;
+    gameCanvas.classList.add('hidden');
+  }
+
   audio_initializing = false;
   cancelLarDebounce();
   resetNoFaceTimer();
@@ -312,6 +322,11 @@ async function startSession(user_id) {
   overlayCanvas.width = overlayCanvas.clientWidth;
   overlayCanvas.height = overlayCanvas.clientHeight;
 
+  // Start VocaTone game loop — pitch provider feeds extractPitch()
+  gameCanvas.classList.remove('hidden');
+  game = new VocaToneGame(gameCanvas);
+  game.startLoop(() => extractPitch());
+
   // State machine: IDLE → CAMERA_ACTIVE
   gatekeeper.reset();
   gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
@@ -333,6 +348,13 @@ async function startSession(user_id) {
 
 function stopSession() {
   session_active = false;
+
+  // Stop VocaTone game loop
+  if (game) {
+    game.destroy();
+    game = null;
+    gameCanvas.classList.add('hidden');
+  }
 
   if (camera_controller) {
     camera_controller.stop();
