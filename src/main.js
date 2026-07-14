@@ -1,6 +1,6 @@
 import './styles/main.css';
 import { initCamera, computeLipAspectRatio } from './utils/vision.js';
-import { lar_threshold } from './utils/constants.js';
+import { lar_threshold, f_min, f_max } from './utils/constants.js';
 import { gatekeeper, STATES } from './utils/gatekeeper.js';
 import { initAudioStream, closeAudioStream, extractPitch } from './utils/audio.js';
 
@@ -101,6 +101,7 @@ function closeAudioGate() {
 
 function startPitchPolling() {
   stopPitchPolling();
+  let stableCount = 0;
   pitchInterval = setInterval(() => {
     if (gatekeeper.getState() !== STATES.MIC_OPEN) {
       stopPitchPolling();
@@ -108,6 +109,17 @@ function startPitchPolling() {
     }
     const pitch = extractPitch();
     updatePitch(pitch);
+    if (pitch >= f_min && pitch <= f_max) {
+      stableCount++;
+      if (stableCount >= 3) {
+        accuracyDisplay.textContent = 'STABLE';
+        accuracyDisplay.style.color = '#22C55E';
+      }
+    } else {
+      stableCount = 0;
+      accuracyDisplay.textContent = '--';
+      accuracyDisplay.style.color = '#94A3B8';
+    }
   }, 100);
 }
 
@@ -156,7 +168,15 @@ function onFaceLandmarks(landmarks) {
 
   if (currentState === STATES.IDLE || currentState === STATES.CAMERA_ACTIVE) {
     if (lastLar >= lar_threshold.high) {
+      gatekeeper.transitionTo(STATES.LAR_CHECK, { mode: 'A' });
+    }
+  }
+
+  if (currentState === STATES.LAR_CHECK) {
+    if (lastLar >= lar_threshold.high) {
       gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'A' });
+    } else {
+      gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
     }
   }
 
