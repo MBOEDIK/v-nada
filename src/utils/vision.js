@@ -58,25 +58,39 @@ export function initCamera(videoElement, onResults, onError) {
     }
   });
 
-  let camera;
-  try {
-    camera = new Camera(videoElement, {
+  function makeCamera(width, height) {
+    return new Camera(videoElement, {
       onFrame: async () => {
         await faceMesh.send({ image: videoElement });
       },
-      width: 480,
-      height: 480,
+      width,
+      height,
     });
+  }
+
+  let camera;
+  try {
+    camera = makeCamera(480, 480);
   } catch (err) {
     if (onError) onError(err);
     return null;
   }
 
-  camera._start = camera.start;
+  const origStart = camera.start.bind(camera);
   camera.start = async () => {
     try {
-      await camera._start();
+      await origStart();
     } catch (err) {
+      if (err.name === 'OverconstrainedError' || err.name === 'NotSupportedError') {
+        try {
+          const fallbackCam = makeCamera(360, 360);
+          await fallbackCam.start();
+          return;
+        } catch (fallbackErr) {
+          if (onError) onError(fallbackErr);
+          return;
+        }
+      }
       if (onError) onError(err);
     }
   };
