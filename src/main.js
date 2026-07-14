@@ -162,7 +162,7 @@ function onFaceLandmarks(landmarks) {
 
   if (currentState === STATES.MIC_OPEN && gatekeeper.getMode() === 'A') {
     if (lastLar < lar_threshold.high) {
-      gatekeeper.reset();
+      gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
     }
   }
 }
