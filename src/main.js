@@ -1,5 +1,6 @@
 import './styles/main.css';
 import { initCamera, computeLipAspectRatio } from './utils/vision.js';
+import { lar_threshold } from './utils/constants.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -18,9 +19,11 @@ const btnStop = $('btn-stop');
 let cameraController = null;
 let sessionActive = false;
 let lastFaceTime = 0;
-let noFaceTimer = null;
+let lastLar = 0;
+let monitorTimer = null;
 
 const NO_FACE_TIMEOUT = 1500;
+const MOUTH_CLOSED_THRESHOLD = lar_threshold.low;
 
 function updateLar(value) {
   larDisplay.textContent = value.toFixed(2);
@@ -63,25 +66,32 @@ function onFaceLandmarks(landmarks) {
   if (!sessionActive) return;
 
   lastFaceTime = performance.now();
-  const lar = computeLipAspectRatio(landmarks);
-  updateLar(lar);
-  showError(false);
+  lastLar = computeLipAspectRatio(landmarks);
+  updateLar(lastLar);
 }
 
-function startNoFaceMonitor() {
-  stopNoFaceMonitor();
-  noFaceTimer = setInterval(() => {
+function startMonitor() {
+  stopMonitor();
+  monitorTimer = setInterval(() => {
     if (!sessionActive) return;
-    if (performance.now() - lastFaceTime > NO_FACE_TIMEOUT) {
+
+    const now = performance.now();
+    const faceGone = now - lastFaceTime > NO_FACE_TIMEOUT;
+
+    if (faceGone) {
       showError(true, 'No Face Detected', 'Please position your face in the camera frame');
+    } else if (lastLar <= MOUTH_CLOSED_THRESHOLD) {
+      showError(true, 'Mouth Closed', 'Please open your mouth to begin');
+    } else {
+      showError(false);
     }
   }, 500);
 }
 
-function stopNoFaceMonitor() {
-  if (noFaceTimer) {
-    clearInterval(noFaceTimer);
-    noFaceTimer = null;
+function stopMonitor() {
+  if (monitorTimer) {
+    clearInterval(monitorTimer);
+    monitorTimer = null;
   }
 }
 
@@ -97,7 +107,7 @@ async function startSession() {
   overlayCanvas.width = cameraFeed.clientWidth;
   overlayCanvas.height = cameraFeed.clientHeight;
 
-  startNoFaceMonitor();
+  startMonitor();
 
   cameraController = initCamera(cameraFeed, onFaceLandmarks, showCameraError);
   if (cameraController) {
@@ -107,7 +117,7 @@ async function startSession() {
 
 function stopSession() {
   sessionActive = false;
-  stopNoFaceMonitor();
+  stopMonitor();
 
   if (cameraController) {
     cameraController.stop();
