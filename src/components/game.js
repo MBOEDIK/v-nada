@@ -36,6 +36,9 @@ const MAX_FALL_SPEED = 8;
 /** Duration (ms) pitch must stay in target range to trigger hover. */
 const STABLE_DURATION_MS = 500;
 
+/** Allowed ±fraction deviation from target frequency boundaries (0.1 = ±10%). */
+const FREQ_TOLERANCE = 0.1;
+
 /** Minimum inter-frame interval (ms) → 20 FPS cap. */
 const FRAME_INTERVAL_MS = 50;
 
@@ -178,7 +181,7 @@ class VocaToneGame {
     this.currentPitchHz = this._pitchProvider ? this._pitchProvider() : 0;
 
     // Physics → Render → Schedule next frame
-    this._updatePhysics();
+    this._updatePhysics(this.currentPitchHz);
     this._render();
 
     this.rafId = requestAnimationFrame((t) => this._loop(t));
@@ -191,54 +194,56 @@ class VocaToneGame {
    *
    * Phase logic:
    *   pitch > 0  → RISE:  velocityY = -RISE_SPEED (constant upward)
-   *   pitch = 0  → FALL:  velocityY += GRAVITY, capped at MAX_FALL_SPEED
+   *   pitch = 0  → FALL:  velocityY = min(GRAVITY × fallTimer, MAX_FALL_SPEED)
    *   stable ≥ 500 ms → HOVER: velocityY = 0, sinusoidal Y drift
    *
-   * Y bounds are clamped: 0 ≤ positionY ≤ canvas.height − OBJ_H
+   * Stability is accumulated via frame-count (+50 ms per frame),
+   * avoiding any Date/time object allocation inside the hot loop.
+   *
+   * @param {number|null} pitchHz - Current pitch in Hz or null/0
    */
-  _updatePhysics() {
-    const pitch = this.currentPitchHz;
+  _updatePhysics(pitchHz) {
+    // ── Effective tolerance bounds (±10% on target range) ────────
+    // Widens the acceptance window so micro-fluctuations don't
+    // reset the stability timer on every frame.
+    const tolerance_min = this.fMin * (1 - FREQ_TOLERANCE);
+    const tolerance_max = this.fMax * (1 + FREQ_TOLERANCE);
 
-    if (pitch > 0) {
+    if (pitchHz > 0) {
       // ── RISE phase ──────────────────────────────────────────────
       this.velocityY = -RISE_SPEED;
       this.fallTimer = 0;
 
-      // Track stability window for hover detection
-      if (pitch >= this.fMin && pitch <= this.fMax) {
+      // Accumulate stability only when pitch is within tolerance bounds.
+      // Each valid frame adds FRAME_INTERVAL_MS (50 ms) to the counter.
+      if (pitchHz >= tolerance_min && pitchHz <= tolerance_max) {
         this.stabilityTimer += FRAME_INTERVAL_MS;
       } else {
         this.stabilityTimer = 0;
       }
     } else {
-      // ── FALL phase (gravity) ────────────────────────────────────
+      // ── FALL phase (gravity acceleration) ───────────────────────
+      // fallTimer counts frames since sound was lost.
+      // velocityY = GRAVITY × fallTimer, capped at MAX_FALL_SPEED.
       this.stabilityTimer = 0;
       this.fallTimer++;
       this.velocityY = Math.min(this.fallTimer * GRAVITY, MAX_FALL_SPEED);
     }
 
     // ── HOVER phase — sinusoidal drift when pitch stable in range ─
-    const isHovering = this.stabilityTimer >= STABLE_DURATION_MS && pitch > 0;
+    const isHovering = this.stabilityTimer >= STABLE_DURATION_MS && pitchHz > 0;
     if (isHovering) {
       this.velocityY = 0;
-      // Smooth sine oscillation via absolute time (no allocation)
+      // Cosmetic micro-vibration via absolute time sine (zero allocation)
       const t = performance.now() * 0.002;
       this.positionY += Math.sin(t) * 0.5;
     } else {
       this.positionY += this.velocityY;
     }
 
-    // ── Clamp Y: 0 ≤ positionY ≤ canvas.height − OBJ_H ──────────
+    // ── Strict viewport clamp: 0 ≤ positionY ≤ height − OBJ_H ───
     const maxY = this.canvas.height - OBJ_H;
-    if (this.positionY < 0) {
-      this.positionY = 0;
-      this.velocityY = 0;
-      this.fallTimer = 0;
-    } else if (this.positionY > maxY) {
-      this.positionY = maxY;
-      this.velocityY = 0;
-      this.fallTimer = 0;
-    }
+    this.positionY = Math.max(0, Math.min(this.positionY, maxY));
   }
 
   // ── Render Pipeline ─────────────────────────────────────────────
