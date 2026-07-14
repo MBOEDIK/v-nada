@@ -62,11 +62,11 @@ function showCameraError(err) {
   );
 }
 
-function onFaceLandmarks(lipLandmarks) {
-  if (!sessionActive || !lipLandmarks) {return;}
+function onFaceLandmarks(landmarks) {
+  if (!sessionActive || !landmarks) {return;}
 
   lastFaceTime = performance.now();
-  lastLar = computeLipAspectRatio(lipLandmarks);
+  lastLar = computeLipAspectRatio(landmarks);
   updateLar(lastLar);
 }
 

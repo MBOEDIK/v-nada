@@ -36,10 +36,14 @@ export function extractLipLandmarks(landmarks) {
   };
 }
 
-export function computeLipAspectRatio(lipLandmarks) {
-  const { top, bottom, left, right } = lipLandmarks;
-  const vertical = computeEuclideanDistance(top, bottom);
-  const horizontal = computeEuclideanDistance(left, right);
+export function computeLipAspectRatio(landmarks) {
+  const pTop = landmarks[FACEMESH_LIPS.top];
+  const pBottom = landmarks[FACEMESH_LIPS.bottom];
+  const pLeft = landmarks[FACEMESH_LIPS.left];
+  const pRight = landmarks[FACEMESH_LIPS.right];
+
+  const vertical = computeEuclideanDistance(pTop, pBottom);
+  const horizontal = computeEuclideanDistance(pLeft, pRight);
 
   if (horizontal === 0) {return 0;}
   return vertical / horizontal;
@@ -69,8 +73,7 @@ export function initCamera(videoElement, onResults, onError) {
     if (!throttleFrame(now)) {return;}
 
     if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-      const lips = extractLipLandmarks(results.multiFaceLandmarks[0]);
-      if (lips) {onResults(lips);}
+      onResults(results.multiFaceLandmarks[0]);
     }
 
     const latency = performance.now() - frameStartTime;
