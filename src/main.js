@@ -70,21 +70,10 @@ function setVowelIndicator(mode) {
   if (mode === 'A') {
     vowelIndicator.querySelector('span').textContent = 'A';
     vowelIndicator.classList.remove('hidden');
-    document.body.classList.add('bg-success');
-    console.log('[C8.2] ✅ Vowel indicator A SHOWN, LAR:', lastLar.toFixed(3));
   } else {
     vowelIndicator.classList.add('hidden');
-    document.body.classList.remove('bg-success');
   }
 }
-
-gatekeeper.onEnter(STATES.CAMERA_ACTIVE, () => {
-  console.log('[C8.2] Entered CAMERA_ACTIVE state');
-});
-
-gatekeeper.onExit(STATES.IDLE, () => {
-  console.log('[C8.2] Exited IDLE state');
-});
 
 async function openAudioGate() {
   if (audioInitialized) {return;}
@@ -143,35 +132,32 @@ gatekeeper.onEnter(STATES.IDLE, () => {
 });
 
 function onFaceLandmarks(landmarks) {
-  try {
-    if (!sessionActive || !landmarks) {return;}
+  if (!sessionActive || !landmarks) {return;}
 
   lastFaceTime = performance.now();
   lastLar = computeLipAspectRatio(landmarks);
   updateLar(lastLar);
 
-  // Visual LAR indicator — changes color based on threshold
-  larDisplay.style.color = lastLar >= lar_threshold.high ? '#22C55E' : (lastLar > lar_threshold.low ? '#EAB308' : '#0D47A1');
+  if (lastLar >= lar_threshold.high) {
+    larDisplay.style.color = '#22C55E';
+  } else if (lastLar > lar_threshold.low) {
+    larDisplay.style.color = '#EAB308';
+  } else {
+    larDisplay.style.color = '#0D47A1';
+  }
 
   const currentState = gatekeeper.getState();
 
-    console.log('[C8.2] LAR:', lastLar.toFixed(3), 'State:', currentState, 'sessionActive:', sessionActive);
-
-    if (currentState === STATES.IDLE || currentState === STATES.CAMERA_ACTIVE) {
-      if (lastLar >= lar_threshold.high) {
-        console.log('[C8.2] 🟢 LAR >= high, opening mic for A');
-        gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'A' });
-      }
+  if (currentState === STATES.IDLE || currentState === STATES.CAMERA_ACTIVE) {
+    if (lastLar >= lar_threshold.high) {
+      gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'A' });
     }
+  }
 
-    if (currentState === STATES.MIC_OPEN && gatekeeper.getMode() === 'A') {
-      if (lastLar < lar_threshold.high) {
-        console.log('[C8.2] 🔴 LAR dropped, fallback to IDLE');
-        gatekeeper.reset();
-      }
+  if (currentState === STATES.MIC_OPEN && gatekeeper.getMode() === 'A') {
+    if (lastLar < lar_threshold.high) {
+      gatekeeper.reset();
     }
-  } catch (err) {
-    console.error('[C8.2] ERROR in onFaceLandmarks:', err);
   }
 }
 
@@ -190,13 +176,7 @@ function startMonitor() {
     } else {
       showError(false);
     }
-
-    // DIRECT A check — bypasses gatekeeper
-    if (lastLar >= lar_threshold.high && gatekeeper.getState() === STATES.CAMERA_ACTIVE) {
-      console.log('[MONITOR] LAR >= high via monitor, transitioning');
-      gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'A' });
-    }
-  }, 200);
+  }, 500);
 }
 
 function stopMonitor() {
@@ -218,7 +198,6 @@ async function startSession() {
   overlayCanvas.width = cameraFeed.clientWidth;
   overlayCanvas.height = cameraFeed.clientHeight;
 
-  console.log('[C8.2] Session started, gatekeeper → CAMERA_ACTIVE');
   startMonitor();
 
   gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
