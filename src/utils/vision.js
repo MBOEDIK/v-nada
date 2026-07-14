@@ -12,6 +12,8 @@ const TARGET_FPS = 15;
 const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
 let lastFrameTime = 0;
+let skipNextFrame = false;
+let frameStartTime = 0;
 
 function throttleFrame(timestamp) {
   if (timestamp - lastFrameTime < FRAME_INTERVAL) {return false;}
@@ -57,17 +59,29 @@ export function initCamera(videoElement, onResults, onError) {
 
   faceMesh.onResults((results) => {
     const now = performance.now();
+
+    if (skipNextFrame) {
+      skipNextFrame = false;
+      return;
+    }
+
     if (!throttleFrame(now)) {return;}
 
     if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
       const lips = extractLipLandmarks(results.multiFaceLandmarks[0]);
       if (lips) {onResults(lips);}
     }
+
+    const latency = performance.now() - frameStartTime;
+    if (latency > 60) {
+      skipNextFrame = true;
+    }
   });
 
   function makeCamera(width, height) {
     return new Camera(videoElement, {
       onFrame: async () => {
+        frameStartTime = performance.now();
         await faceMesh.send({ image: videoElement });
       },
       width,
