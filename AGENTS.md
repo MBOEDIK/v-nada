@@ -38,7 +38,7 @@ All database fields, configuration objects, and state variables MUST use exact s
 | `timestamp` | Date | Session recording timestamp |
 | `module_type` | Enum | Training module type identifier |
 | `lar_accuracy` | Float | Lip aspect ratio accuracy score (0.0-1.0) |
-| `fo_stability` | Float | Fundamental frequency stability score |
+| `f0_stability` | Float | Fundamental frequency stability score |
 | `star_score` | Integer | Star rating (1-3) |
 
 ---
@@ -46,9 +46,9 @@ All database fields, configuration objects, and state variables MUST use exact s
 ## Mathematical Definitions
 
 ### Euclidean Distance
-For two points `p` and `q` in 3D landmark space:
+For two points `p` and `q` in 2D landmark space:
 ```
-d(p, q) = sqrt((p_x - q_x)^2 + (p_y - q_y)^2 + (p_z - q_z)^2)
+d(p, q) = sqrt((p_x - q_x)^2 + (p_y - q_y)^2)
 ```
 
 ### Lip Aspect Ratio (LAR)
@@ -111,28 +111,32 @@ All interactive child UI elements MUST respect minimum touch target sizes:
 | `danger` | `#EF4444` | Incorrect motoric / error execution state |
 | `warning` | `#EAB308` | Shrill pitch / hypernasal warning state |
 | `bg-light` | `#FFFFFF` | Base application canvas layout background |
+| `muted` | `#F8FAFC` | Neutral indicator: no face detected, idle, or low amplitude |
 
 ---
 
 ## MVP Feature Modules
 
-The Minimum Viable Product consists of exactly three modules:
+### Core Modules (50% PoC Scope)
+The Proof of Concept implements two core modules, unified under a shared visual interface layer:
 
-### Modul 1: VocaTone (Single-Game Balloon)
+**Module 1 — VocaTone (Single-Game Balloon)**
 - **Mechanic**: Web Audio API Autocorrelation pitch detection.
-- **Interaction**: User phonates into microphone; detected pitch inflates a balloon on Canvas.
-- **Goal**: Sustain pitch within target frequency band.
+- **Interaction**: User phonates into microphone; detected pitch moves a placeholder object (geometric shape) vertically on Canvas.
+- **Goal**: Sustain phonation to keep the object afloat.
+- **Status**: Audio-only pipeline. No camera dependency. Sequential Validation Logic does NOT apply.
 
-### Modul 2: Dual-Sense (Articulation)
-- **Mechanic**: MediaPipe Face Mesh landmark tracking.
-- **Contrast Vowels**: /a/ vs /i/ only.
-- **Interaction**: User opens mouth (LAR increases) for /a/, spreads lips (LAR decreases) for /i.
-- **Goal**: Achieve correct LAR threshold for target vowel.
+**Module 2 — Dual-Sense (Articulation)**
+- **Mechanic**: MediaPipe Face Mesh landmark tracking + Web Audio API (sequential gate).
+- **Contrast Vowels**: /a/ vs /i/ only. (U, E, O deferred post-PoC.)
+- **Interaction**: User opens mouth (LAR increases) for /a/, spreads lips (LAR decreases) for /i. Mic opens only after LAR passes threshold.
+- **Goal**: Achieve correct LAR threshold for target vowel, then phonate with stable f0.
+- **Validation**: Sequential Validation Logic — camera → LAR → mic → f0.
 
-### Interface: Binary Visual Feedback & Mouth Silhouette Calibration
-- **Binary Feedback**: Green check (correct) / Red X (incorrect) overlay.
-- **Calibration**: Mouth silhouette outline drawn on Canvas overlay from FaceMesh landmarks.
-- **Real-time display**: LAR value, Pitch (Hz), Accuracy %, Star rating.
+**Shared Visual Layer — Binary Visual Feedback & Mouth Silhouette Calibration**
+- **Binary Feedback**: Green (#22C55E) for correct / Yellow (#EAB308) for shrill (f₀ > f_max) / Red (#EF4444) for wrong mouth shape / Grey (#F8FAFC) for no face detected or low amplitude.
+- **Calibration**: Mouth silhouette oval outline (static, 30% opacity) on Canvas overlay via FaceMesh landmarks.
+- **Real-time display**: LAR value, Pitch (Hz). Star rating & IndexedDB history deferred post-PoC.
 
 ---
 
