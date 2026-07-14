@@ -1,6 +1,8 @@
 import './styles/main.css';
 import { initCamera, computeLipAspectRatio } from './utils/vision.js';
 import { lar_threshold } from './utils/constants.js';
+import { gatekeeper, STATES } from './utils/gatekeeper.js';
+import { initAudioStream, closeAudioStream, extractPitch } from './utils/audio.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -13,6 +15,7 @@ const starDisplay = $('star-display');
 const errorScreen = $('error-screen');
 const errorTitle = $('error-title');
 const errorMessage = $('error-message');
+const vowelIndicator = $('vowel-indicator');
 const btnStart = $('btn-start');
 const btnStop = $('btn-stop');
 
@@ -21,9 +24,10 @@ let sessionActive = false;
 let lastFaceTime = 0;
 let lastLar = 0;
 let monitorTimer = null;
+let audioInitialized = false;
+let pitchInterval = null;
 
 const NO_FACE_TIMEOUT = 1500;
-const MOUTH_CLOSED_THRESHOLD = lar_threshold.low;
 
 function updateLar(value) {
   larDisplay.textContent = value.toFixed(2);
@@ -62,12 +66,90 @@ function showCameraError(err) {
   );
 }
 
+function setVowelIndicator(mode) {
+  if (mode === 'A') {
+    vowelIndicator.querySelector('span').textContent = 'A';
+    vowelIndicator.classList.remove('hidden');
+  } else {
+    vowelIndicator.classList.add('hidden');
+  }
+}
+
+async function openAudioGate() {
+  if (audioInitialized) {return;}
+  try {
+    await initAudioStream();
+    audioInitialized = true;
+  } catch (err) {
+    console.error('[Audio] Failed to open audio stream:', err);
+    gatekeeper.reset();
+  }
+}
+
+function closeAudioGate() {
+  if (!audioInitialized) {return;}
+  closeAudioStream();
+  audioInitialized = false;
+  updatePitch(0);
+}
+
+function startPitchPolling() {
+  stopPitchPolling();
+  pitchInterval = setInterval(() => {
+    if (gatekeeper.getState() !== STATES.MIC_OPEN) {
+      stopPitchPolling();
+      return;
+    }
+    const pitch = extractPitch();
+    updatePitch(pitch);
+  }, 100);
+}
+
+function stopPitchPolling() {
+  if (pitchInterval) {
+    clearInterval(pitchInterval);
+    pitchInterval = null;
+  }
+}
+
+gatekeeper.onEnter(STATES.MIC_OPEN, () => {
+  setVowelIndicator(gatekeeper.getMode());
+  openAudioGate();
+  startPitchPolling();
+});
+
+gatekeeper.onExit(STATES.MIC_OPEN, () => {
+  setVowelIndicator(null);
+  closeAudioGate();
+  stopPitchPolling();
+});
+
+gatekeeper.onEnter(STATES.IDLE, () => {
+  closeAudioGate();
+  stopPitchPolling();
+  setVowelIndicator(null);
+});
+
 function onFaceLandmarks(landmarks) {
   if (!sessionActive || !landmarks) {return;}
 
   lastFaceTime = performance.now();
   lastLar = computeLipAspectRatio(landmarks);
   updateLar(lastLar);
+
+  const currentState = gatekeeper.getState();
+
+  if (currentState === STATES.IDLE || currentState === STATES.CAMERA_ACTIVE) {
+    if (lastLar >= lar_threshold.high) {
+      gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'A' });
+    }
+  }
+
+  if (currentState === STATES.MIC_OPEN && gatekeeper.getMode() === 'A') {
+    if (lastLar < lar_threshold.high) {
+      gatekeeper.reset();
+    }
+  }
 }
 
 function startMonitor() {
@@ -80,7 +162,7 @@ function startMonitor() {
 
     if (faceGone) {
       showError(true, 'No Face Detected', 'Please position your face in the camera frame');
-    } else if (lastLar <= MOUTH_CLOSED_THRESHOLD) {
+    } else if (lastLar <= lar_threshold.low) {
       showError(true, 'Mouth Closed', 'Please open your mouth to begin');
     } else {
       showError(false);
@@ -109,6 +191,8 @@ async function startSession() {
 
   startMonitor();
 
+  gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
+
   cameraController = initCamera(cameraFeed, onFaceLandmarks, showCameraError);
   if (cameraController) {
     cameraController.start();
@@ -118,6 +202,9 @@ async function startSession() {
 function stopSession() {
   sessionActive = false;
   stopMonitor();
+  stopPitchPolling();
+
+  gatekeeper.reset();
 
   if (cameraController) {
     cameraController.stop();
