@@ -22,17 +22,36 @@ export async function initAudioStream() {
   return audioContext;
 }
 
-export function closeAudioStream() {
+/**
+ * Tear down the audio pipeline completely.
+ *
+ * 1. Stop all MediaStream tracks (microphone hardware off).
+ * 2. Await AudioContext.close() so the context reaches 'closed' state.
+ * 3. Null all references to prevent stale reads.
+ *
+ * Returns a Promise that resolves once AudioContext.state === 'closed'.
+ * Safe to call multiple times — subsequent calls are no-ops.
+ */
+export async function closeAudioStream() {
   if (mediaStream) {
     mediaStream.getTracks().forEach((track) => track.stop());
     mediaStream = null;
   }
+
   if (audioContext) {
-    audioContext.close();
+    const ctx = audioContext;
     audioContext = null;
+    analyserNode = null;
+    dataArray = null;
+
+    await ctx.close();
+
+    if (ctx.state !== 'closed') {
+      console.warn(
+        `AudioContext state is '${ctx.state}' after close(), expected 'closed'.`
+      );
+    }
   }
-  analyserNode = null;
-  dataArray = null;
 }
 
 function computeRMS(buffer) {
