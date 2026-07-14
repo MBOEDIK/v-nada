@@ -192,45 +192,126 @@ function computeRMS(buffer) {
   return Math.sqrt(sum / buffer.length);
 }
 
-// ── DSP: Autocorrelation Pitch Detection ────────────────────────────
+// ── DSP: Normalized Autocorrelation Pitch Detection ─────────────────
+// Implements TECH-03 blueprint: Normalized Time-Domain Autocorrelation
+// for robust f0 extraction from a single audio frame.
+
+/** Minimum normalized correlation coefficient to accept a pitch candidate. */
+const PITCH_CORRELATION_THRESHOLD = 0.3;
 
 /**
- * Detect fundamental frequency (f0) via time-domain autocorrelation.
+ * Detect fundamental frequency (f0) via **Normalized Time-Domain Autocorrelation**.
  *
- * Algorithm:
- *   For each candidate lag in [sampleRate/MAX_PITCH_HZ, sampleRate/MIN_PITCH_HZ]:
- *     Compute the autocorrelation R(lag) = Σ x[i] * x[i+lag]
- *     Track the lag with the highest correlation value.
- *   f0 = sampleRate / bestLag
+ * Mathematical definition (per TECH-03):
  *
- * The lag range [50 Hz – 800 Hz] covers the full human speaking range
- * from chest voice (f0 ≈ 85–180 Hz) to child/falsetto (up to 800 Hz).
+ *   Step 1 — Energy R(0):
+ *     R(0) = Σ x(t)²   for t = 0..N-1
  *
- * @param {Float32Array} buffer   - Time-domain audio samples
- * @param {number}       sampleRate - Context sample rate (44100 or 48000)
- * @returns {number} Detected f0 in Hz, or 0 if no clear pitch found
+ *   Step 2 — Autocorrelation R(τ):
+ *     R(τ) = Σ x(t) · x(t+τ)   for t = 0..N-1-τ
+ *
+ *   Step 3 — Normalization:
+ *     norm(τ) = R(τ) / R(0)     ∈ [-1, 1]
+ *
+ *   Step 4 — Peak detection:
+ *     bestLag = argmax norm(τ)   for τ in [minLag, maxLag]
+ *
+ *   Step 5 — Frequency conversion:
+ *     f₀ = sampleRate / bestLag
+ *
+ * The lag range [50 Hz – 800 Hz] covers the human speaking voice:
+ *   - Adult chest voice:  f₀ ≈ 85–180 Hz
+ *   - Child voice (7-9):  f₀ ≈ 250–400 Hz
+ *   - Falsetto ceiling:   up to 800 Hz
+ *
+ * This is a **pure function** with no side effects — the input buffer
+ * is never mutated.
+ *
+ * @param {Float32Array} buffer     - Time-domain audio samples (read-only)
+ * @param {number}       sampleRate - Audio context sample rate (e.g. 44100)
+ * @returns {number|null} Detected f0 in Hz, or `null` if no pitch is
+ *                         reliably detected (unvoiced / below threshold).
  */
-function autocorrelationPitch(buffer, sampleRate) {
-  const minLag = Math.floor(sampleRate / MAX_PITCH_HZ);
-  const maxLag = Math.ceil(sampleRate / MIN_PITCH_HZ);
-  let bestLag = -1;
-  let bestCorrelation = -Infinity;
+export function autocorrelationPitch(buffer, sampleRate) {
+  // ── Defensive input validation ──────────────────────────────────
+  if (!(buffer instanceof Float32Array) || buffer.length === 0) {
+    return null;
+  }
+  if (!sampleRate || sampleRate <= 0) {
+    return null;
+  }
 
-  for (let lag = minLag; lag <= maxLag; lag++) {
+  const n = buffer.length;
+
+  // ── Step 1: Energy R(0) ────────────────────────────────────────
+  // R(0) is the total signal energy — the normalization denominator.
+  // R(0) = Σ x(t)²  for t = 0..N-1
+  let energy = 0;
+  for (let t = 0; t < n; t++) {
+    energy += buffer[t] * buffer[t];
+  }
+
+  // Guard: zero energy → pure silence → cannot normalize → no pitch.
+  if (energy === 0) {
+    return null;
+  }
+
+  // ── Step 2: Lag search range (50 Hz – 800 Hz) ─────────────────
+  // minLag = ⌊ sampleRate / 800 ⌋   (highest frequency → shortest lag)
+  // maxLag = ⌈ sampleRate / 50  ⌉   (lowest frequency  → longest lag)
+  //
+  // At 44100 Hz: minLag = 55, maxLag = 882
+  // At 48000 Hz: minLag = 60, maxLag = 960
+  const min_lag = Math.floor(sampleRate / MAX_PITCH_HZ);
+  const max_lag = Math.ceil(sampleRate / MIN_PITCH_HZ);
+
+  // Clamp maxLag to buffer bounds (prevents out-of-bounds access)
+  const safe_max_lag = Math.min(max_lag, n - 1);
+
+  if (min_lag > safe_max_lag) {
+    return null;
+  }
+
+  // ── Step 3–4: Normalized autocorrelation + peak search ─────────
+  // For each candidate lag τ, compute:
+  //   R(τ) = Σ x(t) · x(t+τ)       for t = 0..N-1-τ
+  //   norm(τ) = R(τ) / R(0)         ∈ [-1, 1]
+  //
+  // Track the global maximum across all lags.
+  // The global-maximum search naturally passes over local maxima
+  // at small lags (high-frequency noise / harmonic artifacts),
+  // ensuring we find the most significant correlation peak.
+  let best_lag = -1;
+  let max_correlation = 0;
+
+  for (let lag = min_lag; lag <= safe_max_lag; lag++) {
     let correlation = 0;
-    for (let i = 0; i < buffer.length - lag; i++) {
-      correlation += buffer[i] * buffer[i + lag];
+    for (let t = 0; t < n - lag; t++) {
+      correlation += buffer[t] * buffer[t + lag];
     }
-    correlation /= buffer.length - lag;
 
-    if (correlation > bestCorrelation) {
-      bestCorrelation = correlation;
-      bestLag = lag;
+    // Normalize: divide raw correlation by total energy R(0).
+    // Result is bounded within [-1, 1].
+    const normalized = correlation / energy;
+
+    // Global argmax: track highest correlation and its lag
+    if (normalized > max_correlation) {
+      max_correlation = normalized;
+      best_lag = lag;
     }
   }
 
-  if (bestLag === -1) {return 0;}
-  return sampleRate / bestLag;
+  // ── Step 5: Strict pitch threshold ─────────────────────────────
+  // Reject the candidate if correlation is below PITCH_CORRELATION_THRESHOLD.
+  // This distinguishes "no pitch detected (unvoiced)" from "0 Hz".
+  // Returns `null` (NOT 0) to signal absence of a pitch candidate.
+  if (max_correlation < PITCH_CORRELATION_THRESHOLD || best_lag === -1) {
+    return null;
+  }
+
+  // ── Step 6: Frequency conversion ───────────────────────────────
+  // f₀ = sampleRate / bestLag
+  return sampleRate / best_lag;
 }
 
 // ── Public API: Pitch Extraction ────────────────────────────────────
@@ -241,7 +322,11 @@ function autocorrelationPitch(buffer, sampleRate) {
  * Pipeline:
  *   1. Read time-domain data into the pre-allocated Float32Array.
  *   2. Compute RMS → skip if below NOISE_FLOOR_RMS (silence gate).
- *   3. Run autocorrelation → return f0 in Hz.
+ *   3. Run normalized autocorrelation → return f0 in Hz or 0.
+ *
+ * The silence gate (Step 2) saves CPU by skipping DSP on quiet frames.
+ * The autocorrelation (Step 3) returns `null` for unvoiced signals,
+ * which this function maps to `0` for downstream UI compatibility.
  *
  * @returns {number} Pitch in Hz (0 if silence or no pitch detected)
  */
@@ -255,8 +340,11 @@ export function extractPitch() {
   const rms = computeRMS(dataArray);
   if (rms < NOISE_FLOOR_RMS) {return 0;}
 
-  const sampleRate = audioContext.sampleRate;
-  return autocorrelationPitch(dataArray, sampleRate);
+  const sample_rate = audioContext.sampleRate;
+  const pitch = autocorrelationPitch(dataArray, sample_rate);
+
+  // Map null (no pitch) to 0 for backward-compatible UI display
+  return pitch !== null ? pitch : 0;
 }
 
 export { FFT_SIZE, NOISE_FLOOR_RMS };
