@@ -17,6 +17,10 @@ const btnStop = $('btn-stop');
 
 let cameraController = null;
 let sessionActive = false;
+let lastFaceTime = 0;
+let noFaceTimer = null;
+
+const NO_FACE_TIMEOUT = 1500;
 
 function updateLar(value) {
   larDisplay.textContent = value.toFixed(2);
@@ -58,9 +62,27 @@ function showCameraError(err) {
 function onFaceLandmarks(landmarks) {
   if (!sessionActive) return;
 
+  lastFaceTime = performance.now();
   const lar = computeLipAspectRatio(landmarks);
   updateLar(lar);
   showError(false);
+}
+
+function startNoFaceMonitor() {
+  stopNoFaceMonitor();
+  noFaceTimer = setInterval(() => {
+    if (!sessionActive) return;
+    if (performance.now() - lastFaceTime > NO_FACE_TIMEOUT) {
+      showError(true, 'No Face Detected', 'Please position your face in the camera frame');
+    }
+  }, 500);
+}
+
+function stopNoFaceMonitor() {
+  if (noFaceTimer) {
+    clearInterval(noFaceTimer);
+    noFaceTimer = null;
+  }
 }
 
 async function startSession() {
@@ -75,6 +97,8 @@ async function startSession() {
   overlayCanvas.width = cameraFeed.clientWidth;
   overlayCanvas.height = cameraFeed.clientHeight;
 
+  startNoFaceMonitor();
+
   cameraController = initCamera(cameraFeed, onFaceLandmarks, showCameraError);
   if (cameraController) {
     cameraController.start();
@@ -83,6 +107,7 @@ async function startSession() {
 
 function stopSession() {
   sessionActive = false;
+  stopNoFaceMonitor();
 
   if (cameraController) {
     cameraController.stop();
