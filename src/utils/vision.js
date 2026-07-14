@@ -36,7 +36,7 @@ export function computeLipAspectRatio(landmarks) {
   return vertical / horizontal;
 }
 
-export function initCamera(videoElement, onResults) {
+export function initCamera(videoElement, onResults, onError) {
   const faceMesh = new FaceMesh({
     locateFile: (file) =>
       `/mediapipe/${file}`,
@@ -58,13 +58,28 @@ export function initCamera(videoElement, onResults) {
     }
   });
 
-  const camera = new Camera(videoElement, {
-    onFrame: async () => {
-      await faceMesh.send({ image: videoElement });
-    },
-    width: 480,
-    height: 480,
-  });
+  let camera;
+  try {
+    camera = new Camera(videoElement, {
+      onFrame: async () => {
+        await faceMesh.send({ image: videoElement });
+      },
+      width: 480,
+      height: 480,
+    });
+  } catch (err) {
+    if (onError) onError(err);
+    return null;
+  }
+
+  camera._start = camera.start;
+  camera.start = async () => {
+    try {
+      await camera._start();
+    } catch (err) {
+      if (onError) onError(err);
+    }
+  };
 
   return camera;
 }

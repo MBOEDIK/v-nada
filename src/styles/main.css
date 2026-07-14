@@ -17,3 +17,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+#camera-feed {
+  transform: scaleX(-1);
+}

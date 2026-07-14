@@ -14,6 +14,8 @@ const pitchDisplay = $('pitch-display');
 const accuracyDisplay = $('accuracy-display');
 const starDisplay = $('star-display');
 const errorScreen = $('error-screen');
+const errorTitle = $('error-title');
+const errorMessage = $('error-message');
 const btnStart = $('btn-start');
 const btnStop = $('btn-stop');
 
@@ -40,8 +42,23 @@ function updateStars(count) {
   starDisplay.textContent = filled + empty;
 }
 
-function showError(show) {
+function showError(show, title, message) {
   errorScreen.classList.toggle('hidden', !show);
+  if (show) {
+    if (title) errorTitle.textContent = title;
+    if (message) errorMessage.textContent = message;
+  }
+}
+
+function showCameraError(err) {
+  const isPermission = err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError';
+  showError(
+    true,
+    isPermission ? 'Camera Access Denied' : 'Camera Error',
+    isPermission
+      ? 'Please allow camera permission in your browser settings, then try again'
+      : `Camera error: ${err.message || 'Unknown error'}`
+  );
 }
 
 async function onFaceLandmarks(landmarks) {
@@ -63,7 +80,7 @@ async function onFaceLandmarks(landmarks) {
     const pitch = extractPitch();
     updatePitch(pitch);
   } else {
-    showError(true);
+    showError(true, 'Mouth Closed', 'Please open your mouth to begin');
     if (audioInitialized) {
       closeAudioStream();
       audioInitialized = false;
@@ -87,8 +104,10 @@ async function startSession(userId) {
   overlayCanvas.width = cameraFeed.clientWidth;
   overlayCanvas.height = cameraFeed.clientHeight;
 
-  cameraController = initCamera(cameraFeed, onFaceLandmarks);
-  cameraController.start();
+  cameraController = initCamera(cameraFeed, onFaceLandmarks, showCameraError);
+  if (cameraController) {
+    cameraController.start();
+  }
 }
 
 function stopSession() {
