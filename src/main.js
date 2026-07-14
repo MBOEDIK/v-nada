@@ -109,3 +109,7 @@ function stopSession() {
 
 btnStart.addEventListener('click', () => startSession('default_user'));
 btnStop.addEventListener('click', stopSession);
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
