@@ -52,8 +52,17 @@ function updateLar(value) {
   larDisplay.textContent = value.toFixed(2);
 }
 
+/**
+ * Update the pitch display element.
+ *   null / 0  → "--"  (silence / no pitch detected)
+ *   > 0       → "X Hz" (rounded integer frequency)
+ *
+ * @param {number|null} value - Pitch in Hz or null
+ */
 function updatePitch(value) {
-  pitchDisplay.textContent = value > 0 ? `${Math.round(value)} Hz` : '--';
+  pitchDisplay.textContent = (value !== null && value > 0)
+    ? `${Math.round(value)} Hz`
+    : '--';
 }
 
 function updateAccuracy(value) {

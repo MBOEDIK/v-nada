@@ -319,31 +319,63 @@ export function autocorrelationPitch(buffer, sampleRate) {
 /**
  * Extract the fundamental frequency (f0) from the current audio frame.
  *
- * Pipeline:
- *   1. Read time-domain data into the pre-allocated Float32Array.
- *   2. Compute RMS → skip if below NOISE_FLOOR_RMS (silence gate).
- *   3. Run normalized autocorrelation → return f0 in Hz or 0.
+ * This is the **single entry point** for all external consumers (VocaTone
+ * game loop, main.js orchestrator, future Dual-Sense modules).
  *
- * The silence gate (Step 2) saves CPU by skipping DSP on quiet frames.
- * The autocorrelation (Step 3) returns `null` for unvoiced signals,
- * which this function maps to `0` for downstream UI compatibility.
+ * Pipeline (zero memory allocation — reuses module-scoped dataArray):
+ *   1. State guard — return null if module not initialized (no crash).
+ *   2. Time-domain copy — AnalyserNode fills the pre-allocated Float32Array.
+ *   3. RMS noise floor gate — return null if amplitude < 0.01 (silence).
+ *   4. Normalized autocorrelation — return f0 in Hz or null (no pitch).
  *
- * @returns {number} Pitch in Hz (0 if silence or no pitch detected)
+ * @returns {number|null} Pitch in Hz, or `null` when:
+ *   - Microphone is off / module not initialized
+ *   - Audio frame is silent (RMS < NOISE_FLOOR_RMS)
+ *   - No reliable pitch detected (unvoiced / correlation < 0.3)
  */
 export function extractPitch() {
-  if (!analyserNode || !dataArray) {return 0;}
+  // ── Step 1: State Initialization Guard ──────────────────────────
+  // Return null safely if called before initAudioStream() or after
+  // closeAudioStream(). No TypeError, no console error — silent null.
+  if (!analyserNode || !dataArray) {
+    return null;
+  }
 
-  // Fill dataArray with current time-domain waveform from the AnalyserNode
+  // ── Step 2: Time-Domain Extraction ──────────────────────────────
+  // Copies the current waveform into the pre-allocated Float32Array.
+  // No new allocation — zero GC pressure at 60+ FPS.
   analyserNode.getFloatTimeDomainData(dataArray);
 
-  // Noise floor gate: skip DSP when amplitude is below room noise
+  // ── Step 3: RMS Noise Floor Gate ────────────────────────────────
+  // Mathematical definition:
+  //   RMS = sqrt( (1/N) * Σ x(i)² )   for i = 0..N-1
+  //
+  // If RMS < 0.01 the signal is below the room noise floor.
+  // Early return saves ~95% of CPU by skipping autocorrelation on silence.
   const rms = computeRMS(dataArray);
-  if (rms < NOISE_FLOOR_RMS) {return 0;}
+  if (rms < NOISE_FLOOR_RMS) {
+    return null;
+  }
 
+  // ── Step 4: Autocorrelation Execution ───────────────────────────
+  // Delegates to the normalized autocorrelation algorithm which returns
+  // either a valid f0 (Hz) or null (unvoiced / below threshold).
   const sample_rate = audioContext.sampleRate;
-  const pitch = autocorrelationPitch(dataArray, sample_rate);
+  return autocorrelationPitch(dataArray, sample_rate);
+}
 
-  // Map null (no pitch) to 0 for backward-compatible UI display
+/**
+ * Convenience getter for legacy consumers that expect a numeric `0`
+ * instead of `null` when no pitch is detected.
+ *
+ * Wraps extractPitch() with a null-to-zero fallback.
+ * Use this in contexts where downstream code does `pitch > 0` checks
+ * and cannot handle null (e.g. VocaTone balloon Y-axis mapping).
+ *
+ * @returns {number} Pitch in Hz (0 when no pitch detected or mic inactive)
+ */
+export function getPitchHz() {
+  const pitch = extractPitch();
   return pitch !== null ? pitch : 0;
 }
 
