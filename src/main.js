@@ -1,9 +1,5 @@
 import './styles/main.css';
 import { initCamera, computeLipAspectRatio } from './utils/vision.js';
-import { initAudioStream, closeAudioStream, extractPitch } from './utils/audio.js';
-import { getProfile } from './utils/db.js';
-
-const lar_threshold = 0.3;
 
 const $ = (id) => document.getElementById(id);
 
@@ -20,9 +16,7 @@ const btnStart = $('btn-start');
 const btnStop = $('btn-stop');
 
 let cameraController = null;
-let threshold = lar_threshold;
 let sessionActive = false;
-let audioInitialized = false;
 
 function updateLar(value) {
   larDisplay.textContent = value.toFixed(2);
@@ -61,43 +55,20 @@ function showCameraError(err) {
   );
 }
 
-async function onFaceLandmarks(landmarks) {
-  if (!sessionActive) {
-    return;
-  }
+function onFaceLandmarks(landmarks) {
+  if (!sessionActive) return;
 
   const lar = computeLipAspectRatio(landmarks);
   updateLar(lar);
-
-  if (lar >= threshold) {
-    showError(false);
-
-    if (!audioInitialized) {
-      await initAudioStream();
-      audioInitialized = true;
-    }
-
-    const pitch = extractPitch();
-    updatePitch(pitch);
-  } else {
-    showError(true, 'Mouth Closed', 'Please open your mouth to begin');
-    if (audioInitialized) {
-      closeAudioStream();
-      audioInitialized = false;
-    }
-  }
+  showError(false);
 }
 
-async function startSession(userId) {
+async function startSession() {
   sessionActive = true;
-  audioInitialized = false;
-
-  const profile = await getProfile(userId);
-  if (profile) {
-    threshold = profile.lar_threshold?.value ?? lar_threshold;
-  }
 
   showError(false);
+  updateLar(0);
+  updatePitch(0);
   updateAccuracy(0);
   updateStars(0);
 
@@ -118,15 +89,10 @@ function stopSession() {
     cameraController = null;
   }
 
-  if (audioInitialized) {
-    closeAudioStream();
-    audioInitialized = false;
-  }
-
   showError(false);
 }
 
-btnStart.addEventListener('click', () => startSession('default_user'));
+btnStart.addEventListener('click', startSession);
 btnStop.addEventListener('click', stopSession);
 
 if ('serviceWorker' in navigator) {
