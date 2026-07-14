@@ -22,6 +22,7 @@ function throttleFrame(timestamp) {
 }
 
 export function computeEuclideanDistance(p, q) {
+  if (!p || !q) {return 0;}
   return Math.sqrt((p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2);
 }
 
