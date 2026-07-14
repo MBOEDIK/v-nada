@@ -70,6 +70,7 @@ function setVowelIndicator(mode) {
   if (mode === 'A') {
     vowelIndicator.querySelector('span').textContent = 'A';
     vowelIndicator.classList.remove('hidden');
+    console.log('[C8.2] ✅ Vowel indicator A SHOWN, LAR:', lastLar.toFixed(3));
   } else {
     vowelIndicator.classList.add('hidden');
   }
@@ -113,6 +114,7 @@ function stopPitchPolling() {
 }
 
 gatekeeper.onEnter(STATES.MIC_OPEN, () => {
+  console.log('[GateKeeper] Entered MIC_OPEN, mode:', gatekeeper.getMode());
   setVowelIndicator(gatekeeper.getMode());
   openAudioGate();
   startPitchPolling();
@@ -139,14 +141,18 @@ function onFaceLandmarks(landmarks) {
 
   const currentState = gatekeeper.getState();
 
+  console.log('[C8.2] LAR:', lastLar.toFixed(3), 'State:', currentState);
+
   if (currentState === STATES.IDLE || currentState === STATES.CAMERA_ACTIVE) {
     if (lastLar >= lar_threshold.high) {
+      console.log('[C8.2] 🟢 LAR >= high, opening mic for A');
       gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'A' });
     }
   }
 
   if (currentState === STATES.MIC_OPEN && gatekeeper.getMode() === 'A') {
     if (lastLar < lar_threshold.high) {
+      console.log('[C8.2] 🔴 LAR dropped, fallback to IDLE');
       gatekeeper.reset();
     }
   }
@@ -189,6 +195,7 @@ async function startSession() {
   overlayCanvas.width = cameraFeed.clientWidth;
   overlayCanvas.height = cameraFeed.clientHeight;
 
+  console.log('[C8.2] Session started, gatekeeper → CAMERA_ACTIVE');
   startMonitor();
 
   gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
