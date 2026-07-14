@@ -70,11 +70,21 @@ function setVowelIndicator(mode) {
   if (mode === 'A') {
     vowelIndicator.querySelector('span').textContent = 'A';
     vowelIndicator.classList.remove('hidden');
+    document.body.classList.add('bg-success');
     console.log('[C8.2] ✅ Vowel indicator A SHOWN, LAR:', lastLar.toFixed(3));
   } else {
     vowelIndicator.classList.add('hidden');
+    document.body.classList.remove('bg-success');
   }
 }
+
+gatekeeper.onEnter(STATES.CAMERA_ACTIVE, () => {
+  console.log('[C8.2] Entered CAMERA_ACTIVE state');
+});
+
+gatekeeper.onExit(STATES.IDLE, () => {
+  console.log('[C8.2] Exited IDLE state');
+});
 
 async function openAudioGate() {
   if (audioInitialized) {return;}
