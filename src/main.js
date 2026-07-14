@@ -75,14 +75,20 @@ function setVowelIndicator(mode) {
   }
 }
 
+async function preGrantAudioPermission() {
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    s.getTracks().forEach(t => t.stop());
+  } catch (_) {}
+}
+
 async function openAudioGate() {
   if (audioInitialized) {return;}
   try {
     await initAudioStream();
     audioInitialized = true;
   } catch (err) {
-    console.error('[Audio] Failed to open audio stream:', err);
-    gatekeeper.reset();
+    console.warn('[Audio] Mic unavailable, visual-only mode:', err.message);
   }
 }
 
@@ -197,6 +203,8 @@ async function startSession() {
 
   overlayCanvas.width = cameraFeed.clientWidth;
   overlayCanvas.height = cameraFeed.clientHeight;
+
+  preGrantAudioPermission();
 
   startMonitor();
 
