@@ -23,14 +23,20 @@ export function computeEuclideanDistance(p, q) {
   return Math.sqrt((p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2);
 }
 
-export function computeLipAspectRatio(landmarks) {
-  const pTop = landmarks[FACEMESH_LIPS.top];
-  const pBottom = landmarks[FACEMESH_LIPS.bottom];
-  const pLeft = landmarks[FACEMESH_LIPS.left];
-  const pRight = landmarks[FACEMESH_LIPS.right];
+export function extractLipLandmarks(landmarks) {
+  if (!landmarks) {return null;}
+  return {
+    top: landmarks[FACEMESH_LIPS.top],
+    bottom: landmarks[FACEMESH_LIPS.bottom],
+    left: landmarks[FACEMESH_LIPS.left],
+    right: landmarks[FACEMESH_LIPS.right],
+  };
+}
 
-  const vertical = computeEuclideanDistance(pTop, pBottom);
-  const horizontal = computeEuclideanDistance(pLeft, pRight);
+export function computeLipAspectRatio(lipLandmarks) {
+  const { top, bottom, left, right } = lipLandmarks;
+  const vertical = computeEuclideanDistance(top, bottom);
+  const horizontal = computeEuclideanDistance(left, right);
 
   if (horizontal === 0) {return 0;}
   return vertical / horizontal;
@@ -54,7 +60,8 @@ export function initCamera(videoElement, onResults, onError) {
     if (!throttleFrame(now)) {return;}
 
     if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-      onResults(results.multiFaceLandmarks[0]);
+      const lips = extractLipLandmarks(results.multiFaceLandmarks[0]);
+      if (lips) {onResults(lips);}
     }
   });
 
