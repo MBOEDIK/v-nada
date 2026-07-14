@@ -143,28 +143,35 @@ gatekeeper.onEnter(STATES.IDLE, () => {
 });
 
 function onFaceLandmarks(landmarks) {
-  if (!sessionActive || !landmarks) {return;}
+  try {
+    if (!sessionActive || !landmarks) {return;}
 
   lastFaceTime = performance.now();
   lastLar = computeLipAspectRatio(landmarks);
   updateLar(lastLar);
 
+  // Visual LAR indicator — changes color based on threshold
+  larDisplay.style.color = lastLar >= lar_threshold.high ? '#22C55E' : (lastLar > lar_threshold.low ? '#EAB308' : '#0D47A1');
+
   const currentState = gatekeeper.getState();
 
-  console.log('[C8.2] LAR:', lastLar.toFixed(3), 'State:', currentState);
+    console.log('[C8.2] LAR:', lastLar.toFixed(3), 'State:', currentState, 'sessionActive:', sessionActive);
 
-  if (currentState === STATES.IDLE || currentState === STATES.CAMERA_ACTIVE) {
-    if (lastLar >= lar_threshold.high) {
-      console.log('[C8.2] 🟢 LAR >= high, opening mic for A');
-      gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'A' });
+    if (currentState === STATES.IDLE || currentState === STATES.CAMERA_ACTIVE) {
+      if (lastLar >= lar_threshold.high) {
+        console.log('[C8.2] 🟢 LAR >= high, opening mic for A');
+        gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'A' });
+      }
     }
-  }
 
-  if (currentState === STATES.MIC_OPEN && gatekeeper.getMode() === 'A') {
-    if (lastLar < lar_threshold.high) {
-      console.log('[C8.2] 🔴 LAR dropped, fallback to IDLE');
-      gatekeeper.reset();
+    if (currentState === STATES.MIC_OPEN && gatekeeper.getMode() === 'A') {
+      if (lastLar < lar_threshold.high) {
+        console.log('[C8.2] 🔴 LAR dropped, fallback to IDLE');
+        gatekeeper.reset();
+      }
     }
+  } catch (err) {
+    console.error('[C8.2] ERROR in onFaceLandmarks:', err);
   }
 }
 
@@ -183,7 +190,13 @@ function startMonitor() {
     } else {
       showError(false);
     }
-  }, 500);
+
+    // DIRECT A check — bypasses gatekeeper
+    if (lastLar >= lar_threshold.high && gatekeeper.getState() === STATES.CAMERA_ACTIVE) {
+      console.log('[MONITOR] LAR >= high via monitor, transitioning');
+      gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'A' });
+    }
+  }, 200);
 }
 
 function stopMonitor() {
