@@ -46,14 +46,35 @@ const FRAME_INTERVAL_MS = 50;
 const DEFAULT_F_MIN = 150;
 const DEFAULT_F_MAX = 350;
 
-/** Canvas background fill colour. */
-const BG_COLOR = '#F8FAFC';
+/** Canvas background — default / rise / fall. */
+const BG_DEFAULT = '#F8FAFC';
+
+/** Canvas background — stable hover (green, 20 % opacity). */
+const BG_STABLE = 'rgba(34, 197, 94, 0.2)';
+
+/** Canvas background — shrill / overpitch (yellow, 20 % opacity). */
+const BG_SHRILL = 'rgba(234, 179, 8, 0.2)';
 
 /** Object fill colour (primary token). */
 const OBJ_FILL = '#0D47A1';
 
 /** Object stroke colour. */
 const OBJ_STROKE = '#FFFFFF';
+
+/** HUD text colour (dark on light). */
+const HUD_TEXT = '#333333';
+
+/** HUD font — bold 16 px for pitch value (cached, zero alloc in loop). */
+const HUD_FONT_PITCH = 'bold 16px Inter, sans-serif';
+
+/** HUD font — 13 px for labels. */
+const HUD_FONT_LABEL = '13px Inter, sans-serif';
+
+/** HUD font — bold 14 px for status. */
+const HUD_FONT_STATUS = 'bold 14px Inter, sans-serif';
+
+/** Status labels — pre-allocated, zero alloc in render loop. */
+const STATUS_LABELS = { rise: 'Naik', stable: 'Stabil', fall: 'Turun', shrill: 'Naik' };
 
 // ── Class ───────────────────────────────────────────────────────────
 
@@ -249,23 +270,144 @@ class VocaToneGame {
   // ── Render Pipeline ─────────────────────────────────────────────
 
   /**
-   * Clear canvas, fill background, draw placeholder object.
-   * Called once per frame after physics update.
+   * Determine the current visual state from physics fields.
+   *
+   * Priority: shrill > stable > rise > fall.
+   *   shrill  — pitch > fMax (overpitch warning)
+   *   stable  — pitch in range + stabilityTimer ≥ STABLE_DURATION_MS
+   *   rise    — pitch > 0 (not yet stable, not shrill)
+   *   fall    — pitch null/0
+   *
+   * @returns {'fall'|'rise'|'stable'|'shrill'}
    */
-  _render() {
+  _getGameState() {
+    const pitch = this.currentPitchHz;
+
+    if (pitch <= 0) {
+      return 'fall';
+    }
+    if (pitch > this.fMax) {
+      return 'shrill';
+    }
+    if (this.stabilityTimer >= STABLE_DURATION_MS) {
+      return 'stable';
+    }
+    return 'rise';
+  }
+
+  /**
+   * Fill canvas background based on the current game state.
+   *   fall / rise → default light grey
+   *   stable     → green tint 20 %
+   *   shrill     → yellow tint 20 %
+   */
+  _drawBackground() {
     const { ctx, canvas } = this;
+    const state = this._getGameState();
 
-    // Clear + solid background
-    ctx.fillStyle = BG_COLOR;
+    if (state === 'stable') {
+      ctx.fillStyle = BG_STABLE;
+    } else if (state === 'shrill') {
+      ctx.fillStyle = BG_SHRILL;
+    } else {
+      ctx.fillStyle = BG_DEFAULT;
+    }
+
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
-    // Placeholder rectangle — centred horizontally
+  /**
+   * Draw the player placeholder object (40 × 40 px box).
+   * Centred horizontally, Y controlled by physics.
+   */
+  _drawObject() {
+    const { ctx, canvas } = this;
     const x = (canvas.width - OBJ_W) * 0.5;
+
     ctx.fillStyle = OBJ_FILL;
     ctx.fillRect(x, this.positionY, OBJ_W, OBJ_H);
     ctx.strokeStyle = OBJ_STROKE;
     ctx.lineWidth = 2;
     ctx.strokeRect(x, this.positionY, OBJ_W, OBJ_H);
+  }
+
+  /**
+   * Overlay HUD — pitch value, status label, and stability progress bar.
+   *
+   * Layout:
+   *   Top-left     → pitch Hz (e.g. "245 Hz" or "--")
+   *   Top-right    → status label ("Naik" / "Stabil" / "Turun")
+   *   Bottom-right → stability progress bar (ratio / STABLE_DURATION_MS)
+   *
+   * All font strings are pre-cached as module constants — zero allocation.
+   */
+  _drawHUD() {
+    const { ctx, canvas } = this;
+    const w = canvas.width;
+    const h = canvas.height;
+    const pitch = this.currentPitchHz;
+    const state = this._getGameState();
+
+    // ── Top-left: Pitch value ─────────────────────────────────────
+    ctx.font = HUD_FONT_PITCH;
+    ctx.fillStyle = HUD_TEXT;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(
+      (pitch > 0) ? `${Math.round(pitch)} Hz` : '--',
+      12,
+      12,
+    );
+
+    // ── Top-right: Status label ───────────────────────────────────
+    ctx.font = HUD_FONT_STATUS;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText(STATUS_LABELS[state], w - 12, 12);
+
+    // ── Bottom-right: Stability progress bar ──────────────────────
+    const bar_w = 60;
+    const bar_h = 8;
+    const bar_x = w - 12 - bar_w;
+    const bar_y = h - 12 - bar_h;
+    const ratio = Math.min(this.stabilityTimer / STABLE_DURATION_MS, 1);
+
+    // Background track
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillRect(bar_x, bar_y, bar_w, bar_h);
+
+    // Fill (green when progress > 0)
+    if (ratio > 0) {
+      ctx.fillStyle = OBJ_FILL;
+      ctx.fillRect(bar_x, bar_y, bar_w * ratio, bar_h);
+    }
+
+    // Label above bar
+    ctx.font = HUD_FONT_LABEL;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Stability', bar_x + bar_w, bar_y - 2);
+  }
+
+  /**
+   * Master render — called once per frame after updatePhysics().
+   *
+   * Pipeline: clear → background → object → HUD.
+   * Guard: skips HUD if game loop is not running (prevents render
+   * garbage during initialisation before startLoop() is called).
+   */
+  _render() {
+    const { ctx, canvas } = this;
+
+    // Clear entire surface (prevents ghost frames)
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    this._drawBackground();
+    this._drawObject();
+
+    if (this.running) {
+      this._drawHUD();
+    }
   }
 
   // ── Public API ──────────────────────────────────────────────────
