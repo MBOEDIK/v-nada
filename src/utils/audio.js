@@ -21,8 +21,15 @@
  */
 const FFT_SIZE = 2048;
 
-/** Minimum RMS amplitude to consider as voiced speech (below this = silence). */
-const NOISE_FLOOR_RMS = 0.01;
+/**
+ * Noise Floor Gate — minimum RMS amplitude to consider as voiced speech.
+ * Signals below this threshold are treated as silence; the expensive
+ * autocorrelation loop is skipped entirely to save CPU on low-end devices.
+ *
+ * Declared as `export let` so future IndexedDB user profiles can override
+ * the default value per-user (e.g. quieter environments → lower threshold).
+ */
+export let NOISE_FLOOR_RMS = 0.01; // eslint-disable-line prefer-const
 
 /** Lowest pitch frequency (Hz) the autocorrelation search covers. */
 const MIN_PITCH_HZ = 50;
@@ -395,4 +402,4 @@ export function getPitchHz() {
   return pitch !== null ? pitch : 0;
 }
 
-export { FFT_SIZE, NOISE_FLOOR_RMS };
+export { FFT_SIZE };
