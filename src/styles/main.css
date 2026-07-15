@@ -17,3 +17,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+#camera-feed {
+  transform: scaleX(-1);
+}
+
+#error-screen {
+  transition: opacity 500ms ease;
+}
+
+.flash-success {
+  background-color: #22C55E;
+  opacity: 0.25 !important;
+}
+
+.flash-warning {
+  background-color: #EAB308;
+  opacity: 0.2 !important;
+}
+
+.flash-error {
+  background-color: #EF4444;
+  opacity: 0.25 !important;
+}
+
+.flash-idle {
+  background-color: #EF4444;
+  opacity: 0.15 !important;
+}
+
+#flash-overlay {
+  transition: opacity 300ms ease, background-color 300ms ease;
+}

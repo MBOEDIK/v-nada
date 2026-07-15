@@ -1,8 +1,14 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 
 export default defineConfig({
+  server: {
+    https: true,
+    host: '0.0.0.0',
+  },
   plugins: [
+    basicSsl(),
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {

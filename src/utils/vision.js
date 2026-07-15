@@ -12,6 +12,8 @@ const TARGET_FPS = 15;
 const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
 let lastFrameTime = 0;
+let skipNextFrame = false;
+let frameStartTime = 0;
 
 function throttleFrame(timestamp) {
   if (timestamp - lastFrameTime < FRAME_INTERVAL) {return false;}
@@ -20,7 +22,18 @@ function throttleFrame(timestamp) {
 }
 
 export function computeEuclideanDistance(p, q) {
+  if (!p || !q) {return 0;}
   return Math.sqrt((p.x - q.x) ** 2 + (p.y - q.y) ** 2 + (p.z - q.z) ** 2);
+}
+
+export function extractLipLandmarks(landmarks) {
+  if (!landmarks) {return null;}
+  return {
+    top: landmarks[FACEMESH_LIPS.top],
+    bottom: landmarks[FACEMESH_LIPS.bottom],
+    left: landmarks[FACEMESH_LIPS.left],
+    right: landmarks[FACEMESH_LIPS.right],
+  };
 }
 
 export function computeLipAspectRatio(landmarks) {
@@ -36,7 +49,19 @@ export function computeLipAspectRatio(landmarks) {
   return vertical / horizontal;
 }
 
-export function initCamera(videoElement, onResults) {
+export function getMouthMidpoint(landmarks) {
+  const pTop = landmarks[FACEMESH_LIPS.top];
+  const pBottom = landmarks[FACEMESH_LIPS.bottom];
+  const pLeft = landmarks[FACEMESH_LIPS.left];
+  const pRight = landmarks[FACEMESH_LIPS.right];
+  const cx = (pTop.x + pBottom.x + pLeft.x + pRight.x) / 4;
+  const cy = (pTop.y + pBottom.y + pLeft.y + pRight.y) / 4;
+  const hDist = computeEuclideanDistance(pLeft, pRight);
+  const vDist = computeEuclideanDistance(pTop, pBottom);
+  return { cx, cy, rx: hDist / 2 + 0.02, ry: vDist / 2 + 0.02 };
+}
+
+export function initCamera(videoElement, onResults, onError) {
   const faceMesh = new FaceMesh({
     locateFile: (file) =>
       `/mediapipe/${file}`,
@@ -51,20 +76,61 @@ export function initCamera(videoElement, onResults) {
 
   faceMesh.onResults((results) => {
     const now = performance.now();
+
+    if (skipNextFrame) {
+      skipNextFrame = false;
+      return;
+    }
+
     if (!throttleFrame(now)) {return;}
 
     if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
       onResults(results.multiFaceLandmarks[0]);
     }
+
+    const latency = performance.now() - frameStartTime;
+    if (latency > 60) {
+      skipNextFrame = true;
+    }
   });
 
-  const camera = new Camera(videoElement, {
-    onFrame: async () => {
-      await faceMesh.send({ image: videoElement });
-    },
-    width: 480,
-    height: 480,
-  });
+  function makeCamera(width, height) {
+    return new Camera(videoElement, {
+      onFrame: async () => {
+        frameStartTime = performance.now();
+        await faceMesh.send({ image: videoElement });
+      },
+      width,
+      height,
+    });
+  }
+
+  let camera;
+  try {
+    camera = makeCamera(480, 480);
+  } catch (err) {
+    if (onError) {onError(err);}
+    return null;
+  }
+
+  const origStart = camera.start.bind(camera);
+  camera.start = async () => {
+    try {
+      await origStart();
+    } catch (err) {
+      if (err.name === 'OverconstrainedError' || err.name === 'NotSupportedError') {
+        try {
+          const fallbackCam = makeCamera(360, 360);
+          await fallbackCam.start();
+          return;
+        } catch (fallbackErr) {
+          if (onError) {onError(fallbackErr);}
+          return;
+        }
+      }
+      if (onError) {onError(err);}
+    }
+  };
 
   return camera;
 }
