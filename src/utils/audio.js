@@ -46,6 +46,13 @@ function computeRMS(buffer) {
 function autocorrelationPitch(buffer, sampleRate) {
   const minLag = Math.floor(sampleRate / MAX_PITCH_HZ);
   const maxLag = Math.ceil(sampleRate / MIN_PITCH_HZ);
+
+  let energy = 0;
+  for (let i = 0; i < buffer.length; i++) {
+    energy += buffer[i] * buffer[i];
+  }
+  if (energy === 0) {return null;}
+
   let bestLag = -1;
   let bestCorrelation = -Infinity;
 
@@ -54,7 +61,7 @@ function autocorrelationPitch(buffer, sampleRate) {
     for (let i = 0; i < buffer.length - lag; i++) {
       correlation += buffer[i] * buffer[i + lag];
     }
-    correlation /= buffer.length - lag;
+    correlation /= energy;
 
     if (correlation > bestCorrelation) {
       bestCorrelation = correlation;
@@ -62,17 +69,17 @@ function autocorrelationPitch(buffer, sampleRate) {
     }
   }
 
-  if (bestLag === -1) {return 0;}
+  if (bestLag === -1 || bestCorrelation < 0.3) {return null;}
   return sampleRate / bestLag;
 }
 
 export function extractPitch() {
-  if (!analyserNode || !dataArray) {return 0;}
+  if (!analyserNode || !dataArray) {return null;}
 
   analyserNode.getFloatTimeDomainData(dataArray);
 
   const rms = computeRMS(dataArray);
-  if (rms < NOISE_FLOOR_RMS) {return 0;}
+  if (rms < NOISE_FLOOR_RMS) {return null;}
 
   const sampleRate = audioContext.sampleRate;
   return autocorrelationPitch(dataArray, sampleRate);
