@@ -16,6 +16,7 @@ const errorScreen = $('error-screen');
 const errorTitle = $('error-title');
 const errorMessage = $('error-message');
 const vowelIndicator = $('vowel-indicator');
+const flashOverlay = $('flash-overlay');
 const btnStart = $('btn-start');
 const btnStop = $('btn-stop');
 
@@ -32,6 +33,10 @@ let outOfThresholdSince = 0;
 let fallbackMode = null;
 let larValidSince = 0;
 let errorHideTimer = null;
+let isF0InRange = false;
+let isF0Stable = false;
+let flashActive = false;
+let flashTimeout = null;
 
 const NO_FACE_TIMEOUT = 1500;
 
@@ -117,12 +122,16 @@ function startPitchPolling() {
     const pitch = extractPitch();
     updatePitch(pitch);
     if (pitch >= f_min && pitch <= f_max) {
+      isF0InRange = true;
       stableCount++;
       if (stableCount >= 3) {
+        isF0Stable = true;
         accuracyDisplay.textContent = 'STABLE';
         accuracyDisplay.style.color = '#22C55E';
       }
     } else {
+      isF0InRange = false;
+      isF0Stable = false;
       stableCount = 0;
       accuracyDisplay.textContent = '--';
       accuracyDisplay.style.color = '#94A3B8';
@@ -160,6 +169,17 @@ function triggerFallback(mode) {
       larValidSince = 0;
     }
   }, 2000);
+}
+
+function triggerFlash() {
+  if (flashActive) return;
+  flashActive = true;
+  flashOverlay.classList.add('flash-success');
+  flashTimeout = setTimeout(() => {
+    flashOverlay.classList.remove('flash-success');
+    flashActive = false;
+    flashTimeout = null;
+  }, 500);
 }
 
 gatekeeper.onEnter(STATES.MIC_OPEN, () => {
@@ -276,6 +296,10 @@ function onFaceLandmarks(landmarks) {
     }
   }
 
+  if (currentState === STATES.MIC_OPEN && isF0InRange && isF0Stable) {
+    triggerFlash();
+  }
+
   if (fallbackMode) {
     let isValid = false;
     if (fallbackMode === 'A') {
@@ -381,6 +405,14 @@ function stopSession() {
   }
 
   showError(false);
+  isF0InRange = false;
+  isF0Stable = false;
+  flashOverlay.classList.remove('flash-success');
+  flashActive = false;
+  if (flashTimeout) {
+    clearTimeout(flashTimeout);
+    flashTimeout = null;
+  }
 }
 
 btnStart.addEventListener('click', startSession);
