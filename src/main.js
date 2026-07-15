@@ -1,5 +1,5 @@
 import './styles/main.css';
-import { initCamera, computeLipAspectRatio } from './utils/vision.js';
+import { initCamera, computeLipAspectRatio, extractLipLandmarks, computeEuclideanDistance } from './utils/vision.js';
 import { lar_threshold, f_min, f_max } from './utils/constants.js';
 import { gatekeeper, STATES } from './utils/gatekeeper.js';
 import { initAudioStream, closeAudioStream, extractPitch } from './utils/audio.js';
@@ -26,6 +26,7 @@ let lastLar = 0;
 let monitorTimer = null;
 let audioInitialized = false;
 let pitchInterval = null;
+let restingMouthWidth = Infinity;
 
 const NO_FACE_TIMEOUT = 1500;
 
@@ -156,6 +157,14 @@ function onFaceLandmarks(landmarks) {
   lastLar = computeLipAspectRatio(landmarks);
   updateLar(lastLar);
 
+  const lipPoints = extractLipLandmarks(landmarks);
+  const mouthWidth = lipPoints ? computeEuclideanDistance(lipPoints.left, lipPoints.right) : 0;
+
+  // Track minimum mouth width as resting baseline (to detect active spread for /i/)
+  if (mouthWidth > 0 && mouthWidth < restingMouthWidth) {
+    restingMouthWidth = mouthWidth;
+  }
+
   const currentState = gatekeeper.getState();
   const currentMode = gatekeeper.getMode();
 
@@ -182,7 +191,7 @@ function onFaceLandmarks(landmarks) {
   if (currentState === STATES.IDLE || currentState === STATES.CAMERA_ACTIVE) {
     if (lastLar >= lar_threshold.high) {
       gatekeeper.transitionTo(STATES.LAR_CHECK, { mode: 'A' });
-    } else if (lastLar <= lar_threshold.low) {
+    } else if (lastLar <= lar_threshold.low && restingMouthWidth < Infinity && mouthWidth > restingMouthWidth * 1.15) {
       gatekeeper.transitionTo(STATES.LAR_CHECK, { mode: 'I' });
     }
   }
@@ -191,7 +200,7 @@ function onFaceLandmarks(landmarks) {
     const checkMode = gatekeeper.getMode();
     if (checkMode === 'A' && lastLar >= lar_threshold.high) {
       gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'A' });
-    } else if (checkMode === 'I' && lastLar <= lar_threshold.low) {
+    } else if (checkMode === 'I' && lastLar <= lar_threshold.low && mouthWidth > restingMouthWidth * 1.15) {
       gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'I' });
     } else {
       gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
@@ -252,6 +261,7 @@ function stopMonitor() {
 
 async function startSession() {
   sessionActive = true;
+  restingMouthWidth = Infinity;
 
   showError(false);
   updateLar(0);
