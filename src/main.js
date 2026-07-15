@@ -35,6 +35,7 @@ let larValidSince = 0;
 let errorHideTimer = null;
 let isF0InRange = false;
 let isF0Stable = false;
+let isF0Shrill = false;
 let flashActive = false;
 let flashTimeout = null;
 
@@ -115,6 +116,7 @@ function startPitchPolling() {
   stopPitchPolling();
   isF0InRange = false;
   isF0Stable = false;
+  isF0Shrill = false;
   let stableCount = 0;
   pitchInterval = setInterval(() => {
     if (gatekeeper.getState() !== STATES.MIC_OPEN) {
@@ -123,7 +125,15 @@ function startPitchPolling() {
     }
     const pitch = extractPitch();
     updatePitch(pitch);
-    if (pitch >= f_min && pitch <= f_max) {
+    if (pitch > f_max) {
+      isF0Shrill = true;
+      isF0InRange = false;
+      isF0Stable = false;
+      stableCount = 0;
+      accuracyDisplay.textContent = 'SHRIILL';
+      accuracyDisplay.style.color = '#EAB308';
+    } else if (pitch >= f_min) {
+      isF0Shrill = false;
       isF0InRange = true;
       stableCount++;
       if (stableCount >= 3) {
@@ -132,6 +142,7 @@ function startPitchPolling() {
         accuracyDisplay.style.color = '#22C55E';
       }
     } else {
+      isF0Shrill = false;
       isF0InRange = false;
       isF0Stable = false;
       stableCount = 0;
@@ -196,12 +207,24 @@ gatekeeper.onExit(STATES.MIC_OPEN, () => {
   setVowelIndicator(null);
   closeAudioGate();
   stopPitchPolling();
+  flashOverlay.classList.remove('flash-success', 'flash-warning');
+  if (flashTimeout) {
+    clearTimeout(flashTimeout);
+    flashTimeout = null;
+  }
+  flashActive = false;
 });
 
 gatekeeper.onEnter(STATES.IDLE, () => {
   closeAudioGate();
   stopPitchPolling();
   setVowelIndicator(null);
+  flashOverlay.classList.remove('flash-success', 'flash-warning');
+  if (flashTimeout) {
+    clearTimeout(flashTimeout);
+    flashTimeout = null;
+  }
+  flashActive = false;
 });
 
 function onFaceLandmarks(landmarks) {
@@ -299,8 +322,26 @@ function onFaceLandmarks(landmarks) {
     }
   }
 
-  if (currentState === STATES.MIC_OPEN && isF0InRange && isF0Stable) {
-    triggerFlash();
+  if (currentState === STATES.MIC_OPEN) {
+    if (isF0Shrill) {
+      flashOverlay.classList.add('flash-warning');
+      flashOverlay.classList.remove('flash-success');
+      if (flashTimeout) {
+        clearTimeout(flashTimeout);
+        flashTimeout = null;
+      }
+      flashActive = false;
+    } else if (isF0InRange && isF0Stable) {
+      flashOverlay.classList.remove('flash-warning');
+      triggerFlash();
+    } else {
+      flashOverlay.classList.remove('flash-warning', 'flash-success');
+      if (flashTimeout) {
+        clearTimeout(flashTimeout);
+        flashTimeout = null;
+      }
+      flashActive = false;
+    }
   }
 
   if (fallbackMode) {
@@ -410,7 +451,8 @@ function stopSession() {
   showError(false);
   isF0InRange = false;
   isF0Stable = false;
-  flashOverlay.classList.remove('flash-success');
+  isF0Shrill = false;
+  flashOverlay.classList.remove('flash-success', 'flash-warning');
   flashActive = false;
   if (flashTimeout) {
     clearTimeout(flashTimeout);
