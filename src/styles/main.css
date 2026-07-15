@@ -21,3 +21,7 @@
 #camera-feed {
   transform: scaleX(-1);
 }
+
+#error-screen {
+  transition: opacity 500ms ease;
+}

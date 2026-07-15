@@ -29,6 +29,9 @@ let audioInitialized = false;
 let pitchInterval = null;
 let restingMouthWidth = Infinity;
 let outOfThresholdSince = 0;
+let fallbackMode = null;
+let larValidSince = 0;
+let errorHideTimer = null;
 
 const NO_FACE_TIMEOUT = 1500;
 
@@ -133,6 +136,31 @@ function stopPitchPolling() {
   }
 }
 
+function triggerFallback(mode) {
+  const title = mode === 'A' ? 'Mouth Closed' : 'Mouth Open';
+  const message = mode === 'A'
+    ? 'Open your mouth wide for A'
+    : 'Narrow your lips for I';
+
+  showError(true, title, message);
+  closeAudioGate();
+  gatekeeper.reset();
+  outOfThresholdSince = 0;
+  fallbackMode = mode;
+  larValidSince = 0;
+
+  if (errorHideTimer) {
+    clearTimeout(errorHideTimer);
+  }
+  errorHideTimer = setTimeout(() => {
+    if (fallbackMode) {
+      showError(false);
+      fallbackMode = null;
+      larValidSince = 0;
+    }
+  }, 2000);
+}
+
 gatekeeper.onEnter(STATES.MIC_OPEN, () => {
   console.log('[GateKeeper] Entered MIC_OPEN, mode:', gatekeeper.getMode());
   setVowelIndicator(gatekeeper.getMode());
@@ -226,9 +254,7 @@ function onFaceLandmarks(landmarks) {
         outOfThresholdSince = performance.now();
       } else if (performance.now() - outOfThresholdSince > 300) {
         console.log(`[LAR Monitor] Fallback triggered: mode=A, LAR=${lastLar.toFixed(2)}, threshold=${lar_threshold.high}`);
-        closeAudioGate();
-        gatekeeper.reset();
-        outOfThresholdSince = 0;
+        triggerFallback('A');
       }
     } else {
       outOfThresholdSince = 0;
@@ -242,12 +268,35 @@ function onFaceLandmarks(landmarks) {
         outOfThresholdSince = performance.now();
       } else if (performance.now() - outOfThresholdSince > 300) {
         console.log(`[LAR Monitor] Fallback triggered: mode=I, LAR=${lastLar.toFixed(2)}, spread=${(lastMouthWidth / restingMouthWidth).toFixed(2)}x`);
-        closeAudioGate();
-        gatekeeper.reset();
-        outOfThresholdSince = 0;
+        triggerFallback('I');
       }
     } else {
       outOfThresholdSince = 0;
+    }
+  }
+
+  if (fallbackMode) {
+    let isValid = false;
+    if (fallbackMode === 'A') {
+      isValid = lastLar >= lar_threshold.high;
+    } else if (fallbackMode === 'I') {
+      isValid = isMiddleLar && isMouthSpread;
+    }
+
+    if (isValid) {
+      if (larValidSince === 0) {
+        larValidSince = performance.now();
+      } else if (performance.now() - larValidSince > 1000) {
+        showError(false);
+        fallbackMode = null;
+        larValidSince = 0;
+        if (errorHideTimer) {
+          clearTimeout(errorHideTimer);
+          errorHideTimer = null;
+        }
+      }
+    } else {
+      larValidSince = 0;
     }
   }
 }
@@ -278,9 +327,9 @@ function startMonitor() {
       } else {
         showError(false);
       }
-    } else if (lastLar <= lar_threshold.low) {
+    } else if (!fallbackMode && lastLar <= lar_threshold.low) {
       showError(true, 'Mouth Closed', 'Open your mouth to begin');
-    } else {
+    } else if (!fallbackMode) {
       showError(false);
     }
   }, 500);
