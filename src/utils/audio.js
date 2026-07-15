@@ -55,6 +55,7 @@ function autocorrelationPitch(buffer, sampleRate) {
 
   let bestLag = -1;
   let bestCorrelation = -Infinity;
+  const corrMap = new Map();
 
   for (let lag = minLag; lag <= maxLag; lag++) {
     let correlation = 0;
@@ -62,6 +63,7 @@ function autocorrelationPitch(buffer, sampleRate) {
       correlation += buffer[i] * buffer[i + lag];
     }
     correlation /= energy;
+    corrMap.set(lag, correlation);
 
     if (correlation > bestCorrelation) {
       bestCorrelation = correlation;
@@ -70,6 +72,24 @@ function autocorrelationPitch(buffer, sampleRate) {
   }
 
   if (bestLag === -1 || bestCorrelation < 0.3) {return null;}
+
+  let corrected = true;
+  while (corrected) {
+    corrected = false;
+    for (let divisor = 2; divisor <= 4; divisor++) {
+      if (bestLag % divisor !== 0) {continue;}
+      const subLag = Math.floor(bestLag / divisor);
+      if (subLag < minLag) {continue;}
+      const subCorr = corrMap.get(subLag);
+      if (subCorr !== undefined && subCorr > bestCorrelation * 0.85) {
+        bestLag = subLag;
+        bestCorrelation = subCorr;
+        corrected = true;
+        break;
+      }
+    }
+  }
+
   return sampleRate / bestLag;
 }
 
