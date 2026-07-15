@@ -168,8 +168,13 @@ function onFaceLandmarks(landmarks) {
   const currentState = gatekeeper.getState();
   const currentMode = gatekeeper.getMode();
 
+  const SPREAD_TRIGGER = 1.3;
+  const SPREAD_SUSTAIN = 1.15;
+  const isMiddleLar = lastLar >= lar_threshold.low && lastLar < lar_threshold.high;
+  const isMouthSpread = lastMouthWidth > restingMouthWidth * SPREAD_TRIGGER;
+
   if (currentState === STATES.MIC_OPEN && currentMode === 'I') {
-    if (lastMouthWidth > restingMouthWidth * 1.15) {
+    if (lastMouthWidth > restingMouthWidth * SPREAD_SUSTAIN && lastLar < lar_threshold.high) {
       larDisplay.style.color = '#22C55E';
     } else {
       larDisplay.style.color = '#EAB308';
@@ -191,7 +196,7 @@ function onFaceLandmarks(landmarks) {
   if (currentState === STATES.IDLE) {
     if (lastLar >= lar_threshold.high) {
       gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
-    } else if (lastMouthWidth > restingMouthWidth * 1.15 && lastLar < lar_threshold.high) {
+    } else if (isMiddleLar && isMouthSpread) {
       gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
     }
   }
@@ -199,7 +204,7 @@ function onFaceLandmarks(landmarks) {
   if (currentState === STATES.CAMERA_ACTIVE) {
     if (lastLar >= lar_threshold.high) {
       gatekeeper.transitionTo(STATES.LAR_CHECK, { mode: 'A' });
-    } else if (lastMouthWidth > restingMouthWidth * 1.15 && lastLar < lar_threshold.high) {
+    } else if (isMiddleLar && isMouthSpread) {
       gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'I' });
     }
   }
@@ -220,7 +225,7 @@ function onFaceLandmarks(landmarks) {
   }
 
   if (currentState === STATES.MIC_OPEN && currentMode === 'I') {
-    if (lastMouthWidth <= restingMouthWidth * 1.15 || lastLar >= lar_threshold.high) {
+    if (lastMouthWidth <= restingMouthWidth * SPREAD_SUSTAIN || lastLar >= lar_threshold.high) {
       gatekeeper.transitionTo(STATES.IDLE);
     }
   }
@@ -240,7 +245,9 @@ function startMonitor() {
       showError(true, 'No Face Detected', 'Please position your face in the camera frame');
     } else if (monState === STATES.MIC_OPEN && monMode === 'I') {
       if (lastMouthWidth <= restingMouthWidth * 1.15) {
-        showError(true, 'Not Spreading', 'Spread your lips wide for /i/');
+        showError(true, 'Not Spreading', 'Spread your lips wide and grin for /i/');
+      } else if (lastLar >= lar_threshold.high) {
+        showError(true, 'Too Wide', 'Narrow your mouth — you are opening for /a/');
       } else {
         showError(false);
       }
