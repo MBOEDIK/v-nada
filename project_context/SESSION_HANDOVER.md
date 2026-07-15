@@ -2,46 +2,50 @@
 
 ## Branch & Remote Status
 - **Aktif:** `feature/dualsense` — up to date with `origin/feature/dualsense`
-- **Feat branch baru:** `feat/c9.1-monitor-lar-loop` (belum di-merge)
-- **Branch lama:** Semua branch `feat/c6.*`, `feat/c7.*`, `feat/c8.*` ❌ sudah dihapus (local + remote)
+- **Branch lama:** Semua branch `feat/c6.*`, `feat/c7.*`, `feat/c8.*`, `feat/d11.1*`, `feat/d11.2*` ❌ sudah dihapus (local + remote)
 
 ## Task Terakhir Dikerjakan
 | Task | Status | Keterangan |
 |------|--------|-----------|
-| C8.3 — Validasi /i/ | ✅ Done (fixed) | Mouth spread ratio + LAR middle-range guard |
-| C9.1 — Monitor LAR Loop | ✅ Done (branch `feat/c9.1-monitor-lar-loop`) | 300ms debounce fallback, console log |
+| D10.3 — Flash Merah (Error/Idle) | ✅ Done | `.flash-error` (25%), `.flash-idle` (15%), prioritas merah>kuning>hijau |
+| D11.1 — Render Oval Transparan | ✅ Done | `drawSilhouette()` via RAF, pulse sin, default center |
+| D11.2 — Posisi Oval Ikut Wajah | ✅ Done | `getMouthMidpoint()` di vision.js, mouthData dinamis |
 
 ## Perubahan File Kunci (Sesi Ini)
 
-### `src/main.js`
-- **C9.1:** Ganti immediate fallback di MIC_OPEN (mode A & I) dengan debounced monitoring:
-  - `outOfThresholdSince` — track kapan kondisi pertama kali out-of-range
-  - Mode A: `lastLar < high > 300ms` → `closeAudioGate()` + `gatekeeper.reset()` + console log
-  - Mode I: `mouthWidth <= resting*1.15 || LAR >= high > 300ms` → same
-  - Fluktuasi < 300ms: timer reset, no false trigger
-  - LAR_CHECK → IDLE tetap immediate (pre-MIC, belum ada audio)
-- **C8.3 final:** Deteksi /i/ pakai `isMiddleLar (LAR 0.2-0.5) && isMouthSpread (> 1.3x)`. Hysteresis: trigger 1.3x, sustain 1.15x.
+### `src/components/overlay.js` (baru)
+- `drawSilhouette(ctx, width, height, isFaceDetected, mouthData)` — oval center default (rx=15%w, ry=10%h) atau posisi dinamis dari mouthData
+- Pulse `0.35 + 0.15*Math.sin(Date.now()/500)` saat !isFaceDetected, statis rgba(255,255,255,0.3) saat face detected
 
-### `project_context/SESSION_HANDOVER.md`
-- Update state sesi
+### `src/utils/vision.js`
+- `getMouthMidpoint(landmarks)` — midpoint 4 landmark bibir + rx/ry + 0.02 padding
+
+### `src/main.js`
+- D10.3: `clearAllFlash()` helper, flash priority red>yellow>green, `faceEverDetected` flag, `flash-error` langsung di `triggerFallback()`
+- D11.1: `startSilhouetteLoop()` (RAF 60fps), `stopSilhouetteLoop()`
+- D11.2: `mouthData` global, update di `onFaceLandmarks`, pass null saat face hilang
+
+### `src/styles/main.css`
+- `.flash-error { background-color: #EF4444; opacity: 0.25 !important; }`
+- `.flash-idle { background-color: #EF4444; opacity: 0.15 !important; }`
 
 ## Bug Ditemukan & Solusi
 | Bug | Sebab | Solusi |
 |-----|-------|--------|
-| False positive I saat diam | LAR <= 0.2 trigger /i/, resting LAR juga ≤ 0.2 | Tambah middle-range LAR guard + spread ratio 1.3 |
-| False positive I saat napas | Spread ratio 1.15 terlalu kecil | Naikkan trigger ke 1.3x, sustain tetap 1.15x (hysteresis) |
-| LAR_CHECK → CAMERA_ACTIVE invalid | Gatekeeper hanya allow IDLE | Diubah fallback ke IDLE |
+| D10.3: Error screen muncul saat idle awal (no face) | `faceGone` selalu trigger showError | Tambah `faceEverDetected` flag — error screen hanya mid-session |
+| D10.3: Flash merah delay 66ms setelah fallback | TriggerFallback hanya set error screen, nunggu onFaceLandmarks | Tambah `clearAllFlash(); flash-error` langsung di triggerFallback |
+| D11.2: Oval tetap di posisi terakhir saat face hilang | `mouthData` stale, tetap dikirim ke drawSilhouette | Pass `isFaceDetected ? mouthData : null` |
 
 ## Next Steps
-1. ✅ C9.1 — Done di branch `feat/c9.1-monitor-lar-loop`
-2. **Merge** `feat/c9.1-monitor-lar-loop` → `feature/dualsense`
-3. Lanjut C9.2 — Reset State + Visual Error (#39)
-4. D10.x — Binary Flash
-5. D11.x — Oval Silhouette
+1. B5.x — VocaTone Game Loop (jika diperlukan)
+2. Update GitHub Issues — close task yang sudah selesai
+3. Testing integrasi end-to-end
 
 ## Catatan Penting
 - Trigger I: `LAR >= 0.2 && LAR < 0.5 && mouthWidth > resting * 1.3`
 - Fallback I: `mouthWidth <= resting * 1.15 || LAR >= 0.5` > 300ms
 - Trigger A: `LAR >= 0.5`
 - Fallback A: `LAR < 0.5` > 300ms
-- Hapus branch task: feat/c6.1, c6.3, c7.1, c7.2, c8.2, c8.3 ✅
+- Flash priority: RED (non-MIC_OPEN) > YELLOW (shrill) > GREEN (stable)
+- Oval: default center saat no face, ikut midpoint landmark saat face detected
+- Hapus branch task: feat/c6.1, c6.3, c7.1, c7.2, c8.2, c8.3, feat/d11.1*, feat/d11.2* ✅

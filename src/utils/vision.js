@@ -109,7 +109,7 @@ export function initCamera(videoElement, onResults, onError) {
   try {
     camera = makeCamera(480, 480);
   } catch (err) {
-    if (onError) onError(err);
+    if (onError) {onError(err);}
     return null;
   }
 
@@ -124,11 +124,11 @@ export function initCamera(videoElement, onResults, onError) {
           await fallbackCam.start();
           return;
         } catch (fallbackErr) {
-          if (onError) onError(fallbackErr);
+          if (onError) {onError(fallbackErr);}
           return;
         }
       }
-      if (onError) onError(err);
+      if (onError) {onError(err);}
     }
   };
 

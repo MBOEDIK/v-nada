@@ -68,8 +68,8 @@ function showError(show, title, message) {
   errorScreen.classList.toggle('opacity-100', show);
   errorScreen.classList.toggle('pointer-events-auto', show);
   if (show) {
-    if (title) errorTitle.textContent = title;
-    if (message) errorMessage.textContent = message;
+    if (title) {errorTitle.textContent = title;}
+    if (message) {errorMessage.textContent = message;}
   }
 }
 
@@ -171,10 +171,10 @@ function triggerFallback(mode) {
     : 'Narrow your lips for I';
 
   showError(true, title, message);
-  clearAllFlash();
-  flashOverlay.classList.add('flash-error');
   closeAudioGate();
   gatekeeper.reset();
+  clearAllFlash();
+  flashOverlay.classList.add('flash-error');
   outOfThresholdSince = 0;
   fallbackMode = mode;
   larValidSince = 0;
@@ -399,7 +399,7 @@ function onFaceLandmarks(landmarks) {
 function startMonitor() {
   stopMonitor();
   monitorTimer = setInterval(() => {
-    if (!sessionActive) return;
+    if (!sessionActive) {return;}
 
     const now = performance.now();
     const faceGone = now - lastFaceTime > NO_FACE_TIMEOUT;
