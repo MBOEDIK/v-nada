@@ -269,7 +269,7 @@ function onFaceLandmarks(landmarks) {
     larDisplay.style.color = '#0D47A1';
   }
 
-  if (currentState === STATES.IDLE && !fallbackMode) {
+  if (currentState === STATES.IDLE) {
     if (lastLar >= lar_threshold.high) {
       gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
     } else if (isMiddleLar && isMouthSpread) {
@@ -277,10 +277,10 @@ function onFaceLandmarks(landmarks) {
     }
   }
 
-  if (currentState === STATES.CAMERA_ACTIVE && !fallbackMode) {
-    if (lastLar >= lar_threshold.high) {
+  if (currentState === STATES.CAMERA_ACTIVE) {
+    if (lastLar >= lar_threshold.high && fallbackMode !== 'A') {
       gatekeeper.transitionTo(STATES.LAR_CHECK, { mode: 'A' });
-    } else if (isMiddleLar && isMouthSpread) {
+    } else if (isMiddleLar && isMouthSpread && fallbackMode !== 'I') {
       gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'I' });
     }
   }
