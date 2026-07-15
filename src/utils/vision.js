@@ -49,6 +49,18 @@ export function computeLipAspectRatio(landmarks) {
   return vertical / horizontal;
 }
 
+export function getMouthMidpoint(landmarks) {
+  const pTop = landmarks[FACEMESH_LIPS.top];
+  const pBottom = landmarks[FACEMESH_LIPS.bottom];
+  const pLeft = landmarks[FACEMESH_LIPS.left];
+  const pRight = landmarks[FACEMESH_LIPS.right];
+  const cx = (pTop.x + pBottom.x + pLeft.x + pRight.x) / 4;
+  const cy = (pTop.y + pBottom.y + pLeft.y + pRight.y) / 4;
+  const hDist = computeEuclideanDistance(pLeft, pRight);
+  const vDist = computeEuclideanDistance(pTop, pBottom);
+  return { cx, cy, rx: hDist / 2 + 0.02, ry: vDist / 2 + 0.02 };
+}
+
 export function initCamera(videoElement, onResults, onError) {
   const faceMesh = new FaceMesh({
     locateFile: (file) =>
