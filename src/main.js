@@ -54,7 +54,8 @@ function updateStars(count) {
 }
 
 function showError(show, title, message) {
-  errorScreen.classList.toggle('hidden', !show);
+  errorScreen.classList.toggle('opacity-100', show);
+  errorScreen.classList.toggle('pointer-events-auto', show);
   if (show) {
     if (title) errorTitle.textContent = title;
     if (message) errorMessage.textContent = message;
