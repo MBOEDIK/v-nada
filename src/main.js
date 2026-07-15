@@ -222,7 +222,7 @@ function startSilhouetteLoop() {
     overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
     const now = performance.now();
     const isFaceDetected = now - lastFaceTime < NO_FACE_TIMEOUT;
-    drawSilhouette(overlayCtx, overlayCanvas.width, overlayCanvas.height, isFaceDetected, mouthData);
+    drawSilhouette(overlayCtx, overlayCanvas.width, overlayCanvas.height, isFaceDetected, isFaceDetected ? mouthData : null);
   }
   loop();
 }
