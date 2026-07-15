@@ -1,5 +1,5 @@
 import './styles/main.css';
-import { initCamera, computeLipAspectRatio } from './utils/vision.js';
+import { initCamera, computeLipAspectRatio, extractLipLandmarks, computeEuclideanDistance } from './utils/vision.js';
 import { lar_threshold, f_min, f_max } from './utils/constants.js';
 import { gatekeeper, STATES } from './utils/gatekeeper.js';
 import { initAudioStream, closeAudioStream, extractPitch } from './utils/audio.js';
@@ -23,9 +23,11 @@ let cameraController = null;
 let sessionActive = false;
 let lastFaceTime = 0;
 let lastLar = 0;
+let lastMouthWidth = 0;
 let monitorTimer = null;
 let audioInitialized = false;
 let pitchInterval = null;
+let restingMouthWidth = Infinity;
 
 const NO_FACE_TIMEOUT = 1500;
 
@@ -156,11 +158,18 @@ function onFaceLandmarks(landmarks) {
   lastLar = computeLipAspectRatio(landmarks);
   updateLar(lastLar);
 
+  const lipPoints = extractLipLandmarks(landmarks);
+  lastMouthWidth = lipPoints ? computeEuclideanDistance(lipPoints.left, lipPoints.right) : 0;
+
+  if (lastMouthWidth > 0 && lastMouthWidth < restingMouthWidth) {
+    restingMouthWidth = lastMouthWidth;
+  }
+
   const currentState = gatekeeper.getState();
   const currentMode = gatekeeper.getMode();
 
   if (currentState === STATES.MIC_OPEN && currentMode === 'I') {
-    if (lastLar <= lar_threshold.low) {
+    if (lastMouthWidth > restingMouthWidth * 1.15) {
       larDisplay.style.color = '#22C55E';
     } else {
       larDisplay.style.color = '#EAB308';
@@ -180,7 +189,9 @@ function onFaceLandmarks(landmarks) {
   }
 
   if (currentState === STATES.IDLE) {
-    if (lastLar >= lar_threshold.high || lastLar <= lar_threshold.low) {
+    if (lastLar >= lar_threshold.high) {
+      gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
+    } else if (lastMouthWidth > restingMouthWidth * 1.15 && lastLar < lar_threshold.high) {
       gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
     }
   }
@@ -188,7 +199,7 @@ function onFaceLandmarks(landmarks) {
   if (currentState === STATES.CAMERA_ACTIVE) {
     if (lastLar >= lar_threshold.high) {
       gatekeeper.transitionTo(STATES.LAR_CHECK, { mode: 'A' });
-    } else if (lastLar <= lar_threshold.low) {
+    } else if (lastMouthWidth > restingMouthWidth * 1.15 && lastLar < lar_threshold.high) {
       gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'I' });
     }
   }
@@ -209,7 +220,7 @@ function onFaceLandmarks(landmarks) {
   }
 
   if (currentState === STATES.MIC_OPEN && currentMode === 'I') {
-    if (lastLar > lar_threshold.low) {
+    if (lastMouthWidth <= restingMouthWidth * 1.15 || lastLar >= lar_threshold.high) {
       gatekeeper.transitionTo(STATES.IDLE);
     }
   }
@@ -228,8 +239,8 @@ function startMonitor() {
     if (faceGone) {
       showError(true, 'No Face Detected', 'Please position your face in the camera frame');
     } else if (monState === STATES.MIC_OPEN && monMode === 'I') {
-      if (lastLar > lar_threshold.low) {
-        showError(true, 'Mouth Open', 'Close your lips tight for /i/');
+      if (lastMouthWidth <= restingMouthWidth * 1.15) {
+        showError(true, 'Not Spreading', 'Spread your lips wide for /i/');
       } else {
         showError(false);
       }
@@ -256,6 +267,7 @@ function stopMonitor() {
 
 async function startSession() {
   sessionActive = true;
+  restingMouthWidth = Infinity;
 
   showError(false);
   updateLar(0);
