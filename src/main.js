@@ -113,6 +113,8 @@ function closeAudioGate() {
 
 function startPitchPolling() {
   stopPitchPolling();
+  isF0InRange = false;
+  isF0Stable = false;
   let stableCount = 0;
   pitchInterval = setInterval(() => {
     if (gatekeeper.getState() !== STATES.MIC_OPEN) {
