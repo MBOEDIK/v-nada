@@ -28,6 +28,7 @@ let monitorTimer = null;
 let audioInitialized = false;
 let pitchInterval = null;
 let restingMouthWidth = Infinity;
+let outOfThresholdSince = 0;
 
 const NO_FACE_TIMEOUT = 1500;
 
@@ -218,15 +219,35 @@ function onFaceLandmarks(landmarks) {
     }
   }
 
-  if (currentState === STATES.MIC_OPEN && currentMode === 'A') {
-    if (lastLar < lar_threshold.high) {
-      gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
+  if (sessionActive && audioInitialized && currentState === STATES.MIC_OPEN && currentMode === 'A') {
+    const isOutOfRange = lastLar < lar_threshold.high;
+    if (isOutOfRange) {
+      if (outOfThresholdSince === 0) {
+        outOfThresholdSince = performance.now();
+      } else if (performance.now() - outOfThresholdSince > 300) {
+        console.log(`[LAR Monitor] Fallback triggered: mode=A, LAR=${lastLar.toFixed(2)}, threshold=${lar_threshold.high}`);
+        closeAudioGate();
+        gatekeeper.reset();
+        outOfThresholdSince = 0;
+      }
+    } else {
+      outOfThresholdSince = 0;
     }
   }
 
-  if (currentState === STATES.MIC_OPEN && currentMode === 'I') {
-    if (lastMouthWidth <= restingMouthWidth * SPREAD_SUSTAIN || lastLar >= lar_threshold.high) {
-      gatekeeper.transitionTo(STATES.IDLE);
+  if (sessionActive && audioInitialized && currentState === STATES.MIC_OPEN && currentMode === 'I') {
+    const isOutOfRange = lastMouthWidth <= restingMouthWidth * SPREAD_SUSTAIN || lastLar >= lar_threshold.high;
+    if (isOutOfRange) {
+      if (outOfThresholdSince === 0) {
+        outOfThresholdSince = performance.now();
+      } else if (performance.now() - outOfThresholdSince > 300) {
+        console.log(`[LAR Monitor] Fallback triggered: mode=I, LAR=${lastLar.toFixed(2)}, spread=${(lastMouthWidth / restingMouthWidth).toFixed(2)}x`);
+        closeAudioGate();
+        gatekeeper.reset();
+        outOfThresholdSince = 0;
+      }
+    } else {
+      outOfThresholdSince = 0;
     }
   }
 }
