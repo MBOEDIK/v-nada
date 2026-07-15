@@ -141,6 +141,26 @@ The Proof of Concept implements two core modules, unified under a shared visual 
 ---
 
 ## RUNTIME BOUNDARY & CONTEXT LOCK (SPRINT 1)
-1. **Mandatory Context Initialization:** Before receiving, processing, or executing any prompt or command from the user, you MUST explicitly open, read, and parse the `project_context\50_PERCENT_OF_MVP.md` file located in the repository.
-2. **Strict Scope Constraint:** The `project_context\50_PERCENT_OF_MVP.md` document acts as your absolute system boundary. You are strictly forbidden from writing code, generating components, initializing endpoints, or building mechanics that exceed the 50% Proof of Concept (PoC) scope defined in that file.
+1. **Mandatory Context Initialization:** Before receiving, processing, or executing any prompt or command from the user, you MUST explicitly open, read, and parse in order:
+   - `project_context/50_PERCENT_OF_MVP.md` — batasan ruang lingkup 50% PoC
+   - `project_context/SESSION_HANDOVER.md` — status proyek terakhir, branch aktif, task sisa, critical rules
+   - `project_context/ISSUE_DRAFTS.md` — spesifikasi detail tiap task
+2. **Strict Scope Constraint:** The `project_context/50_PERCENT_OF_MVP.md` document acts as your absolute system boundary. You are strictly forbidden from writing code, generating components, initializing endpoints, or building mechanics that exceed the 50% Proof of Concept (PoC) scope defined in that file.
 3. **No Speculative Coding:** If a user instruction implicitly or explicitly requests a feature that belongs to the Full MVP (100% scope) or the Ideal Product scope (such as full Vowel U/E/O integration, IndexedDB analytics historical logging, or advanced asset animations), you must automatically downscale the implementation to match the 50% placeholder/core-engine standards and issue a reminder of this boundary.
+4. **Session Handover:** At the end of every session, you MUST update `project_context/SESSION_HANDOVER.md` with:
+   - Branch aktif dan status remote
+   - Task yang sudah dikerjakan (dengan status ✅/⚠️/❌)
+   - Perubahan file kunci
+   - Bug yang ditemukan dan solusinya
+   - Next steps yang jelas
+
+## COMMIT CONVENTION
+Semua commit message WAJIB menggunakan **Bahasa Indonesia** yang konsisten.
+Format: `<type>: <deskripsi singkat dalam bahasa Indonesia>`
+
+- `feat:` — fitur baru
+- `fix:` — perbaikan bug
+- `chore:` — tugas teknis (config, dependencies)
+- `refactor:` — perubahan kode tanpa ubah fungsionalitas
+- `docs:` — perubahan dokumentasi
+- `debug:` — tambahan sementara untuk debugging (jangan di-merge ke main)

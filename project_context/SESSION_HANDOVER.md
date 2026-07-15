@@ -1,131 +1,100 @@
-# Session Handover — C6.1 Complete, Ready for Next Issue
+# Session Handover — C8.2 Validasi /a/ Selesai
 
 ## Current State
 
 | Item | Detail |
 |---|---|
-| **Branch aktif** | `feature/dualsense` (sudah merge dari `feat/c6.1-setup-kamera`) |
+| **Branch aktif** | `feature/dualsense` |
 | **Remote** | `origin/feature/dualsense` — up to date |
-| **Status C6.1** | ✅ Done — Issue #30 di Project Board → "Review" |
-| **13 issues remaining** | C6.2, C6.3, C7.1, C7.2, C8.2, C8.3, C9.1, C9.2, D10.1–D10.3, D11.1, D11.2 |
+| **Status C8.2** | ✅ Done — Issue #36 di Project Board → "Review" |
+| **Dev server** | `https://192.168.100.4:5173` (Vite HTTPS, tmux session `vite-dev`) |
 
-## Files Changed (C6.1)
+## Task Progress
 
-### `src/utils/vision.js`
-- **FACEMESH_LIPS** constant: `{top:13, bottom:14, left:78, right:308}` + named export
-- **`initCamera(videoElement, onResults, onError)`** — factory fungsi kamera:
-  - LocateFile → `/mediapipe/`
-  - FaceMesh options: `maxNumFaces:1, refineLandmarks:true, minDetectionConfidence:0.5, minTrackingConfidence:0.5`
-  - onResults callback with throttle (15 FPS) + guard clause `multiFaceLandmarks`
-  - Camera 480x480, fallback 360x360 on OverconstrainedError/NotSupportedError
-  - Try-catch on constructor & start(), calls onError callback
-- **`computeEuclideanDistance(p, q)`** — pure function
-- **`computeLipAspectRatio(landmarks)`** — extracts 4 landmarks, computes LAR
+### ✅ Done (4 issues)
+| Issue | Task | Keterangan |
+|---|---|---|
+| #36 | **C8.2 Validasi /a/** | Selesai dengan full spek |
+
+### 🔍 Review (14 issues) — kode sudah ada, perlu verifikasi
+| Issue | Task | Real Status |
+|---|---|---|
+| #30 | C6.1 Setup Kamera | ✅ |
+| #31 | C6.2 Landmark Bibir | ✅ |
+| #32 | C6.3 Throttling FPS | ✅ |
+| #33 | C7.1 Euclidean Distance | ✅ |
+| #34 | C7.2 Lip Aspect Ratio | ✅ |
+| #19 | A2.1 State Machine | ✅ (GateKeeper) |
+| #20 | A2.2 Pipeline Kamera→Gate | ⚠️ Canvas overlay tidak pernah digambar |
+| #21 | A2.3 Fallback Visual | ⚠️ No debounce 300ms, no triggerFallback() |
+| #22 | B3.1 Audio Pipeline Init | ⚠️ No explicit AudioContext.resume() |
+| #23 | B3.2 Autokorelasi | ⚠️ No R(0) normalization, no 0.3 threshold |
+| #24 | B3.3 Output f0 | ⚠️ Return 0 instead of null |
+| #25 | B4.1 Hitung RMS | ⚠️ Empty buffer = Infinity, not exported |
+| #26 | B4.2 Integrasi Gate Logic | ✅ |
+| #27-29 | B5.x VocaTone Game | ❌ **Belum ada implementasi** (tidak di scope 50%?) |
+
+### 📋 Todo (8 issues) — belum dikerjakan
+| #37 | C8.3 Validasi /i/ |
+| #38 | C9.1 Monitor LAR Loop |
+| #39 | C9.2 Reset State + Visual Error |
+| #40-42 | D10.1-D10.3 Flash Hijau/Kuning/Merah |
+| #43-44 | D11.1-D11.2 Oval Silhouette |
+
+## Files Changed (Sesi Ini — C8.2)
 
 ### `src/main.js`
-- Imports: `initCamera`, `computeLipAspectRatio` from vision.js, `lar_threshold` from constants.js
-- State: `cameraController`, `sessionActive`, `lastFaceTime`, `lastLar`, `monitorTimer`
-- **`onFaceLandmarks(landmarks)`** — updates LAR display, records lastFaceTime + lastLar
-- **`startMonitor()`** — interval 500ms cek 2 kondisi:
-  1. No face > 1.5s → "No Face Detected"
-  2. LAR <= `lar_threshold.low` (0.2) → "Mouth Closed"
-  3. Prioritas: No Face > Mouth Closed > OK (visual feedback only, NOT a gate)
-- **`showCameraError(err)`** — NotAllowedError → "Camera Access Denied"
-- Removed: audio imports, LAR gate logic, threshold state, userId param
+- Gate logic A: `onFaceLandmarks` cek LAR >= high → `LAR_CHECK → MIC_OPEN`
+- `setVowelIndicator(mode)`: show/hide huruf A di tengah layar
+- `preGrantAudioPermission()`: request mic izin di user gesture (Start click)
+- `openAudioGate()`: visual-only fallback jika mic gagal (tidak reset gatekeeper)
+- `startPitchPolling()`: extractPitch setiap 100ms, binary feedback "STABLE" hijau jika 3 bacaan stabil di [f_min, f_max]
+- LAR display color: hijau (>=high), kuning (>low), biru (default)
+- Monitor interval 500ms: cek No Face + Mouth Closed
+- Fallback LAR drop: `transitionTo(CAMERA_ACTIVE)` bukan `reset()` — agar bisa repeat cycle
 
-### `src/styles/main.css`
-- Added `#camera-feed { transform: scaleX(-1); }` for mirror
+### `src/utils/gatekeeper.js`
+- **BUG FIX**: `CAMERA_ACTIVE` valid transitions tambah `STATES.MIC_OPEN` (sebelumnya cuma LAR_CHECK, IDLE — transisi gagal silent)
+- Flow: `CAMERA_ACTIVE → LAR_CHECK → MIC_OPEN` (via main.js onFaceLandmarks)
 
 ### `index.html`
-- Added `id="error-title"` and `id="error-message"` on error-screen elements
+- `#vowel-indicator` kelas `z-[60]` (lebih tinggi dari error screen z-50)
+- Span 72pt, font-heading (Montserrat), font-bold, text-black (#000000)
+
+### `AGENTS.md`
+- Tambah mandatory context init: baca `SESSION_HANDOVER.md` + `ISSUE_DRAFTS.md`
+- Tambah commit convention: **Bahasa Indonesia** format `<type>: <deskripsi>`
+
+## Bug Found & Fixes
+
+| Bug | Penyebab | Solusi |
+|---|---|---|
+| Transisi gatekeeper gagal silent | `CAMERA_ACTIVE` tidak include `MIC_OPEN` di valid transitions | Tambah `STATES.MIC_OPEN` ke `VALID_TRANSITIONS[CAMERA_ACTIVE]` |
+| "A" cuma muncul sekali, tidak bisa repeat | `gatekeeper.reset()` set state ke IDLE, tapi `IDLE → MIC_OPEN` invalid | Ganti fallback jadi `transitionTo(CAMERA_ACTIVE)` — valid transition |
+| Mic tidak aktif saat LAR >= high | `getUserMedia({audio:true})` dipanggil di FaceMesh callback (bukan user gesture) → Chrome block | `preGrantAudioPermission()` dipanggil di `startSession()` (user gesture) |
+| "A" tertutup error screen | Kedua elemen z-50, error screen muncul belakang di DOM | `vowel-indicator` z-[60] |
 
 ## Critical Rules (must enforce in new session)
-
 1. **ZERO** Node.js backend modules (`fs`, `path`, `express`, etc.)
-2. **snake_case** for all fields: `user_id`, `lar_threshold`, `f_min`, `f_max`, `session_id`, `module_type`, `lar_accuracy`, `f0_stability`, `star_score`
+2. **snake_case** for all fields
 3. Memory < 150MB, camera square max 480p, FPS 15-20
 4. FFT size 2048, noise floor RMS < 0.01
 5. Fat-finger: all buttons `min-w-[60px] min-h-[60px]`
 6. Color tokens: `#0D47A1`, `#22C55E`, `#EF4444`, `#EAB308`, `#FFFFFF`, `#F8FAFC`
 7. **Scope 50% PoC**: vowels A & I only, IndexedDB history deferred, placeholder graphics
-8. Branch from `feature/dualsense` for each new task (naming: `feat/<kode-task>-<nama>`)
-9. Always run `npm run validate` before commit
+8. Commit messages in **Bahasa Indonesia** (`feat:`, `fix:`, `chore:`, etc.)
 
-## Next Steps — Remaining Tasks (ShofaKhafiiy)
-
-### Priority order (by dependency chain):
-
-| Order | Issue | Task | Depends On | Status |
-|---|---|---|---|---|
-| 1 | #30 | **C6.1** — Setup Kamera ✅ | A2.2 | **DONE** |
-| 2 | #31 | C6.2 — Ekstraksi 4 Landmark Bibir | C6.1 | Code already exists in vision.js |
-| 3 | #32 | C6.3 — Throttling Frame Rate | C6.2 | Code partially exists (vision.js) |
-| 4 | #33 | C7.1 — Euclidean Distance | C6.2 | Code already exists |
-| 5 | #34 | C7.2 — Lip Aspect Ratio | C7.1 | Code already exists |
-| 6 | #36 | C8.2 — Validasi /a/ | C8.1 (done by MBOEDIK) | |
-| 7 | #37 | C8.3 — Validasi /i/ | C8.1 | |
-| 8 | #38 | C9.1 — Monitor LAR Loop | C8.3 | |
-| 9 | #39 | C9.2 — Reset State + Visual Error | C9.1 | |
-| 10 | #40 | D10.1 — Flash Hijau (Success) | C8.3 | |
-| 11 | #41 | D10.2 — Flash Kuning (Hypernasal) | D10.1 | |
-| 12 | #42 | D10.3 — Flash Merah (Error/Idle) | D10.2 | |
-| 13 | #43 | D11.1 — Render Oval Transparan | C6.2 | |
-| 14 | #44 | D11.2 — Posisi Oval Ikut Wajah | D11.1 | |
-
-**Note:** Issues C6.2 (#31), C7.1 (#33), C7.2 (#34) are partially/fully implemented in vision.js but not yet marked Done on the project board.
-
-## File Structure Overview
-
-```
-src/
-├── main.js                    # Entry point, orchestrator
-├── styles/
-│   └── main.css               # Tailwind + custom CSS (#camera-feed mirror)
-├── components/
-│   └── .gitkeep               # Empty (for future game components)
-└── utils/
-    ├── vision.js               # initCamera, FACEMESH_LIPS, Euclidean, LAR
-    ├── audio.js                # Audio pipeline (initAudioStream, extractPitch)
-    ├── constants.js            # lar_threshold, f_min, f_max
-    └── db.js                   # IndexedDB (deferred for 50% PoC)
-public/
-├── mediapipe/                  # FaceMesh WASM + model files (offline cache)
-├── fonts/                      # Inter + Montserrat woff2
-└── icons/                      # PWA icons 192x192, 512x512
-```
+## Next Steps
+1. Verify C8.2 di browser: `https://192.168.100.4:5173/`
+2. Jika C8.2 OK → pindah issue #36 dari Review ke Done
+3. Task berikutnya: **C8.3 — Validasi /i/** (#37) atau **C9.1 — Monitor LAR Loop** (#38)
+4. Atau perbaiki ⚠️ issues di Review (B3.2 autokorelasi, A2.2 canvas overlay, D10.x binary flash)
 
 ## GitHub CLI Quick Reference
-
 ```bash
-# Check current branch
 git branch --show-current
-
-# Create new branch for next issue (from feature/dualsense)
-git checkout feature/dualsense
-git checkout -b feat/<kode-task>-<nama>
-git push -u origin feat/<kode-task>-<nama>
-
-# View issue details
-gh issue view <number> --repo MBOEDIK/v-nada
-
-# Update project board status
+gh issue view 36 --repo MBOEDIK/v-nada
 # Project ID: PVT_kwHOBwzd2c4Bc6wq
-# Status field ID: PVTSSF_lAHOBwzd2c4Bc6wqzhXgE2w
-# Options: Todo(f75ad846) / In progress(47fc9ee4) / Done(98236657)
-gh project item-edit --project-id PVT_kwHOBwzd2c4Bc6wq \
-  --id <ITEM_ID> \
-  --field-id PVTSSF_lAHOBwzd2c4Bc6wqzhXgE2w \
-  --single-select-option-id <OPTION_ID>
-
-# Validate architecture
-npm run validate
-
-# Start dev server
-tmux new-session -d -s vite-dev 'node_modules/.bin/vite --host 0.0.0.0'
-# Stop: tmux kill-session -t vite-dev
+# Status: Todo(f75ad846) / In progress(47fc9ee4) / REVISI(fdaf4464) / Review(9d770ed4) / Done(98236657)
+gh project item-edit --project-id PVT_kwHOBwzd2c4Bc6wq --id <ITEM_ID> --field-id PVTSSF_lAHOBwzd2c4Bc6wqzhXgE2w --single-select-option-id <OPTION_ID>
 ```
-
-## Project Board Fields
-- Status options: `Todo` (f75ad846), `In progress` (47fc9ee4), `REVISI` (fdaf4464), `Review` (9d770ed4), `Done` (98236657)
-- User (ShofaKhafiiy) has **Write** permission on repo
-- All team collaborators: **MBOEDIK** (Admin), **Irwand13** (Write/VocaTone), **ShofaKhafiiy** (Write/Dual-Sense)
