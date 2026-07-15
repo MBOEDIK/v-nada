@@ -1,8 +1,17 @@
-export function drawSilhouette(ctx, width, height, isFaceDetected) {
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const radiusX = width * 0.15;
-  const radiusY = height * 0.10;
+export function drawSilhouette(ctx, width, height, isFaceDetected, mouthData) {
+  let centerX, centerY, radiusX, radiusY;
+
+  if (mouthData) {
+    centerX = mouthData.cx * width;
+    centerY = mouthData.cy * height;
+    radiusX = mouthData.rx * width;
+    radiusY = mouthData.ry * height;
+  } else {
+    centerX = width / 2;
+    centerY = height / 2;
+    radiusX = width * 0.15;
+    radiusY = height * 0.10;
+  }
 
   ctx.beginPath();
   ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, Math.PI * 2);

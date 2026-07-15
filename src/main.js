@@ -1,5 +1,5 @@
 import './styles/main.css';
-import { initCamera, computeLipAspectRatio, extractLipLandmarks, computeEuclideanDistance } from './utils/vision.js';
+import { initCamera, computeLipAspectRatio, extractLipLandmarks, computeEuclideanDistance, getMouthMidpoint } from './utils/vision.js';
 import { lar_threshold, f_min, f_max } from './utils/constants.js';
 import { gatekeeper, STATES } from './utils/gatekeeper.js';
 import { initAudioStream, closeAudioStream, extractPitch } from './utils/audio.js';
@@ -40,6 +40,7 @@ let isF0Shrill = false;
 let flashActive = false;
 let flashTimeout = null;
 let faceEverDetected = false;
+let mouthData = null;
 let silhouetteRAF = null;
 let overlayCtx = null;
 
@@ -221,7 +222,7 @@ function startSilhouetteLoop() {
     overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
     const now = performance.now();
     const isFaceDetected = now - lastFaceTime < NO_FACE_TIMEOUT;
-    drawSilhouette(overlayCtx, overlayCanvas.width, overlayCanvas.height, isFaceDetected);
+    drawSilhouette(overlayCtx, overlayCanvas.width, overlayCanvas.height, isFaceDetected, mouthData);
   }
   loop();
 }
@@ -264,6 +265,7 @@ function onFaceLandmarks(landmarks) {
   lastFaceTime = performance.now();
   lastLar = computeLipAspectRatio(landmarks);
   updateLar(lastLar);
+  mouthData = getMouthMidpoint(landmarks);
 
   const lipPoints = extractLipLandmarks(landmarks);
   lastMouthWidth = lipPoints ? computeEuclideanDistance(lipPoints.left, lipPoints.right) : 0;
@@ -445,6 +447,7 @@ async function startSession() {
   sessionActive = true;
   restingMouthWidth = Infinity;
   faceEverDetected = false;
+  mouthData = null;
 
   showError(false);
   updateLar(0);
