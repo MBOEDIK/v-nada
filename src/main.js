@@ -3,6 +3,7 @@ import { initCamera, computeLipAspectRatio, extractLipLandmarks, computeEuclidea
 import { lar_threshold, f_min, f_max } from './utils/constants.js';
 import { gatekeeper, STATES } from './utils/gatekeeper.js';
 import { initAudioStream, closeAudioStream, extractPitch } from './utils/audio.js';
+import { drawSilhouette } from './components/overlay.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -39,6 +40,8 @@ let isF0Shrill = false;
 let flashActive = false;
 let flashTimeout = null;
 let faceEverDetected = false;
+let silhouetteRAF = null;
+let overlayCtx = null;
 
 const NO_FACE_TIMEOUT = 1500;
 
@@ -207,6 +210,30 @@ function triggerFlash() {
     flashActive = false;
     flashTimeout = null;
   }, 500);
+}
+
+function startSilhouetteLoop() {
+  stopSilhouetteLoop();
+  overlayCtx = overlayCanvas.getContext('2d');
+  function loop() {
+    if (!sessionActive) {return;}
+    silhouetteRAF = requestAnimationFrame(loop);
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    const now = performance.now();
+    const isFaceDetected = now - lastFaceTime < NO_FACE_TIMEOUT;
+    drawSilhouette(overlayCtx, overlayCanvas.width, overlayCanvas.height, isFaceDetected);
+  }
+  loop();
+}
+
+function stopSilhouetteLoop() {
+  if (silhouetteRAF) {
+    cancelAnimationFrame(silhouetteRAF);
+    silhouetteRAF = null;
+  }
+  if (overlayCtx) {
+    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  }
 }
 
 gatekeeper.onEnter(STATES.MIC_OPEN, () => {
@@ -430,6 +457,7 @@ async function startSession() {
 
   preGrantAudioPermission();
 
+  startSilhouetteLoop();
   startMonitor();
 
   gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
@@ -442,6 +470,7 @@ async function startSession() {
 
 function stopSession() {
   sessionActive = false;
+  stopSilhouetteLoop();
   stopMonitor();
   stopPitchPolling();
 
