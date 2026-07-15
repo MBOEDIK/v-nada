@@ -123,7 +123,6 @@ function startPitchPolling() {
     }
     const pitch = extractPitch();
     updatePitch(pitch);
-    console.log(`[Pitch Poll] f0=${pitch}, inRange=${pitch >= f_min && pitch <= f_max}, stableCount=${stableCount}, isF0Stable=${isF0Stable}`);
     if (pitch >= f_min && pitch <= f_max) {
       isF0InRange = true;
       stableCount++;
@@ -175,19 +174,11 @@ function triggerFallback(mode) {
 }
 
 function triggerFlash() {
-  if (flashActive) {
-    console.log('[Flash] Skipped — already active');
-    return;
-  }
-  if (!flashOverlay) {
-    console.error('[Flash] flashOverlay element not found in DOM');
-    return;
-  }
-  console.log('[Flash] Triggering flash — adding flash-success class');
+  if (flashActive) {return;}
+  if (!flashOverlay) {return;}
   flashActive = true;
   flashOverlay.classList.add('flash-success');
   flashTimeout = setTimeout(() => {
-    console.log('[Flash] Removing flash-success class (timeout 500ms)');
     flashOverlay.classList.remove('flash-success');
     flashActive = false;
     flashTimeout = null;
@@ -309,10 +300,7 @@ function onFaceLandmarks(landmarks) {
   }
 
   if (currentState === STATES.MIC_OPEN && isF0InRange && isF0Stable) {
-    console.log('[Flash] Condition met: MIC_OPEN, isF0InRange, isF0Stable — calling triggerFlash()');
     triggerFlash();
-  } else if (currentState === STATES.MIC_OPEN) {
-    console.log(`[Flash] Condition NOT met: isF0InRange=${isF0InRange}, isF0Stable=${isF0Stable}`);
   }
 
   if (fallbackMode) {
