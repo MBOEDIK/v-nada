@@ -38,6 +38,7 @@ let isF0Stable = false;
 let isF0Shrill = false;
 let flashActive = false;
 let flashTimeout = null;
+let faceEverDetected = false;
 
 const NO_FACE_TIMEOUT = 1500;
 
@@ -166,6 +167,8 @@ function triggerFallback(mode) {
     : 'Narrow your lips for I';
 
   showError(true, title, message);
+  clearAllFlash();
+  flashOverlay.classList.add('flash-error');
   closeAudioGate();
   gatekeeper.reset();
   outOfThresholdSince = 0;
@@ -182,6 +185,16 @@ function triggerFallback(mode) {
       larValidSince = 0;
     }
   }, 2000);
+}
+
+function clearAllFlash() {
+  if (!flashOverlay) {return;}
+  flashOverlay.classList.remove('flash-success', 'flash-warning', 'flash-error', 'flash-idle');
+  if (flashTimeout) {
+    clearTimeout(flashTimeout);
+    flashTimeout = null;
+  }
+  flashActive = false;
 }
 
 function triggerFlash() {
@@ -207,28 +220,19 @@ gatekeeper.onExit(STATES.MIC_OPEN, () => {
   setVowelIndicator(null);
   closeAudioGate();
   stopPitchPolling();
-  flashOverlay.classList.remove('flash-success', 'flash-warning');
-  if (flashTimeout) {
-    clearTimeout(flashTimeout);
-    flashTimeout = null;
-  }
-  flashActive = false;
+  clearAllFlash();
 });
 
 gatekeeper.onEnter(STATES.IDLE, () => {
   closeAudioGate();
   stopPitchPolling();
   setVowelIndicator(null);
-  flashOverlay.classList.remove('flash-success', 'flash-warning');
-  if (flashTimeout) {
-    clearTimeout(flashTimeout);
-    flashTimeout = null;
-  }
-  flashActive = false;
+  clearAllFlash();
 });
 
 function onFaceLandmarks(landmarks) {
   if (!sessionActive || !landmarks) {return;}
+  faceEverDetected = true;
 
   lastFaceTime = performance.now();
   lastLar = computeLipAspectRatio(landmarks);
@@ -322,26 +326,19 @@ function onFaceLandmarks(landmarks) {
     }
   }
 
-  if (currentState === STATES.MIC_OPEN) {
-    if (isF0Shrill) {
-      flashOverlay.classList.add('flash-warning');
-      flashOverlay.classList.remove('flash-success');
-      if (flashTimeout) {
-        clearTimeout(flashTimeout);
-        flashTimeout = null;
-      }
-      flashActive = false;
-    } else if (isF0InRange && isF0Stable) {
-      flashOverlay.classList.remove('flash-warning');
-      triggerFlash();
-    } else {
-      flashOverlay.classList.remove('flash-warning', 'flash-success');
-      if (flashTimeout) {
-        clearTimeout(flashTimeout);
-        flashTimeout = null;
-      }
-      flashActive = false;
+  if (currentState !== STATES.MIC_OPEN) {
+    if (currentState !== STATES.LAR_CHECK) {
+      clearAllFlash();
+      flashOverlay.classList.add('flash-error');
     }
+  } else if (isF0Shrill) {
+    clearAllFlash();
+    flashOverlay.classList.add('flash-warning');
+  } else if (isF0InRange && isF0Stable) {
+    flashOverlay.classList.remove('flash-warning', 'flash-error', 'flash-idle');
+    triggerFlash();
+  } else {
+    clearAllFlash();
   }
 
   if (fallbackMode) {
@@ -381,7 +378,13 @@ function startMonitor() {
     const monMode = gatekeeper.getMode();
 
     if (faceGone) {
-      showError(true, 'No Face Detected', 'Please position your face in the camera frame');
+      clearAllFlash();
+      flashOverlay.classList.add('flash-idle');
+      if (faceEverDetected) {
+        showError(true, 'No Face Detected', 'Please position your face in the camera frame');
+      } else {
+        showError(false);
+      }
     } else if (monState === STATES.MIC_OPEN && monMode === 'I') {
       if (lastMouthWidth <= restingMouthWidth * 1.15) {
         showError(true, 'Not Spreading', 'Spread your lips wide and grin for /i/');
@@ -414,6 +417,7 @@ function stopMonitor() {
 async function startSession() {
   sessionActive = true;
   restingMouthWidth = Infinity;
+  faceEverDetected = false;
 
   showError(false);
   updateLar(0);
@@ -452,12 +456,7 @@ function stopSession() {
   isF0InRange = false;
   isF0Stable = false;
   isF0Shrill = false;
-  flashOverlay.classList.remove('flash-success', 'flash-warning');
-  flashActive = false;
-  if (flashTimeout) {
-    clearTimeout(flashTimeout);
-    flashTimeout = null;
-  }
+  clearAllFlash();
 }
 
 btnStart.addEventListener('click', startSession);
