@@ -33,8 +33,9 @@
 | Bug | Sebab | Solusi |
 |-----|-------|--------|
 | D10.3: Error screen muncul saat idle awal (no face) | `faceGone` selalu trigger showError | Tambah `faceEverDetected` flag — error screen hanya mid-session |
-| D10.3: Flash merah delay 66ms setelah fallback | TriggerFallback hanya set error screen, nunggu onFaceLandmarks | Tambah `clearAllFlash(); flash-error` langsung di triggerFallback |
+| D10.3: Flash merah terhapus oleh gatekeeper.reset() | `clearAllFlash()` di onExit/onEnter callback hapus flash-error | Pindah `clearAllFlash(); flash-error` setelah `gatekeeper.reset()` |
 | D11.2: Oval tetap di posisi terakhir saat face hilang | `mouthData` stale, tetap dikirim ke drawSilhouette | Pass `isFaceDetected ? mouthData : null` |
+| Lint: 6 error curly (missing braces) | ESLint rule `curly: error` | Tambah braces di semua single-line if |
 
 ## Next Steps
 1. B5.x — VocaTone Game Loop (jika diperlukan)
