@@ -67,8 +67,8 @@ function showCameraError(err) {
 }
 
 function setVowelIndicator(mode) {
-  if (mode === 'A') {
-    vowelIndicator.querySelector('span').textContent = 'A';
+  if (mode === 'A' || mode === 'I') {
+    vowelIndicator.querySelector('span').textContent = mode;
     vowelIndicator.classList.remove('hidden');
   } else {
     vowelIndicator.classList.add('hidden');
@@ -156,7 +156,22 @@ function onFaceLandmarks(landmarks) {
   lastLar = computeLipAspectRatio(landmarks);
   updateLar(lastLar);
 
-  if (lastLar >= lar_threshold.high) {
+  const currentState = gatekeeper.getState();
+  const currentMode = gatekeeper.getMode();
+
+  if (currentState === STATES.MIC_OPEN && currentMode === 'I') {
+    if (lastLar <= lar_threshold.low) {
+      larDisplay.style.color = '#22C55E';
+    } else {
+      larDisplay.style.color = '#EAB308';
+    }
+  } else if (currentState === STATES.MIC_OPEN && currentMode === 'A') {
+    if (lastLar >= lar_threshold.high) {
+      larDisplay.style.color = '#22C55E';
+    } else {
+      larDisplay.style.color = '#EAB308';
+    }
+  } else if (lastLar >= lar_threshold.high) {
     larDisplay.style.color = '#22C55E';
   } else if (lastLar > lar_threshold.low) {
     larDisplay.style.color = '#EAB308';
@@ -164,24 +179,33 @@ function onFaceLandmarks(landmarks) {
     larDisplay.style.color = '#0D47A1';
   }
 
-  const currentState = gatekeeper.getState();
-
   if (currentState === STATES.IDLE || currentState === STATES.CAMERA_ACTIVE) {
     if (lastLar >= lar_threshold.high) {
       gatekeeper.transitionTo(STATES.LAR_CHECK, { mode: 'A' });
+    } else if (lastLar <= lar_threshold.low) {
+      gatekeeper.transitionTo(STATES.LAR_CHECK, { mode: 'I' });
     }
   }
 
   if (currentState === STATES.LAR_CHECK) {
-    if (lastLar >= lar_threshold.high) {
+    const checkMode = gatekeeper.getMode();
+    if (checkMode === 'A' && lastLar >= lar_threshold.high) {
       gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'A' });
+    } else if (checkMode === 'I' && lastLar <= lar_threshold.low) {
+      gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: 'I' });
     } else {
       gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
     }
   }
 
-  if (currentState === STATES.MIC_OPEN && gatekeeper.getMode() === 'A') {
+  if (currentState === STATES.MIC_OPEN && currentMode === 'A') {
     if (lastLar < lar_threshold.high) {
+      gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
+    }
+  }
+
+  if (currentState === STATES.MIC_OPEN && currentMode === 'I') {
+    if (lastLar > lar_threshold.low) {
       gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
     }
   }
@@ -194,11 +218,25 @@ function startMonitor() {
 
     const now = performance.now();
     const faceGone = now - lastFaceTime > NO_FACE_TIMEOUT;
+    const monState = gatekeeper.getState();
+    const monMode = gatekeeper.getMode();
 
     if (faceGone) {
       showError(true, 'No Face Detected', 'Please position your face in the camera frame');
+    } else if (monState === STATES.MIC_OPEN && monMode === 'I') {
+      if (lastLar > lar_threshold.low) {
+        showError(true, 'Mouth Open', 'Close your lips tight for /i/');
+      } else {
+        showError(false);
+      }
+    } else if (monState === STATES.MIC_OPEN && monMode === 'A') {
+      if (lastLar < lar_threshold.high) {
+        showError(true, 'Mouth Closing', 'Keep your mouth wide for /a/');
+      } else {
+        showError(false);
+      }
     } else if (lastLar <= lar_threshold.low) {
-      showError(true, 'Mouth Closed', 'Please open your mouth to begin');
+      showError(true, 'Mouth Closed', 'Open your mouth to begin');
     } else {
       showError(false);
     }
