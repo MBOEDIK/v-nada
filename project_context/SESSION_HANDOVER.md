@@ -11,10 +11,11 @@
 
 ## Task Progress
 
-### ✅ Done (4 issues)
+### ✅ Done (5 issues)
 | Issue | Task | Keterangan |
 |---|---|---|
 | #36 | **C8.2 Validasi /a/** | Selesai dengan full spek |
+| #37 | **C8.3 Validasi /i/** | Selesai — LAR <= low → LAR_CHECK → MIC_OPEN, mode 'I' |
 
 ### 🔍 Review (14 issues) — kode sudah ada, perlu verifikasi
 | Issue | Task | Real Status |
@@ -57,6 +58,15 @@
 - **BUG FIX**: `CAMERA_ACTIVE` valid transitions tambah `STATES.MIC_OPEN` (sebelumnya cuma LAR_CHECK, IDLE — transisi gagal silent)
 - Flow: `CAMERA_ACTIVE → LAR_CHECK → MIC_OPEN` (via main.js onFaceLandmarks)
 
+### `src/main.js` (Sesi C8.3)
+- `setVowelIndicator(mode)`: sekarang handle mode 'I' juga (tampilkan "I")
+- `onFaceLandmarks`: tambah gate I — `LAR <= low → LAR_CHECK (mode 'I')`
+- LAR_CHECK: mode-aware — cek `gatekeeper.getMode()` untuk 'A' vs 'I'
+- MIC_OPEN mode I: fallback jika `LAR > low → CAMERA_ACTIVE`
+- LAR display color: mode-aware — hijau saat LAR valid untuk mode aktif
+- `startMonitor`: mode-aware error messages — "Mouth Open — Close your lips tight for /i/"
+- `currentMode` capture di awal onFaceLandmarks untuk reuse
+
 ### `index.html`
 - `#vowel-indicator` kelas `z-[60]` (lebih tinggi dari error screen z-50)
 - Span 72pt, font-heading (Montserrat), font-bold, text-black (#000000)
@@ -85,10 +95,9 @@
 8. Commit messages in **Bahasa Indonesia** (`feat:`, `fix:`, `chore:`, etc.)
 
 ## Next Steps
-1. Verify C8.2 di browser: `https://192.168.100.4:5173/`
-2. Jika C8.2 OK → pindah issue #36 dari Review ke Done
-3. Task berikutnya: **C8.3 — Validasi /i/** (#37) atau **C9.1 — Monitor LAR Loop** (#38)
-4. Atau perbaiki ⚠️ issues di Review (B3.2 autokorelasi, A2.2 canvas overlay, D10.x binary flash)
+1. Test C8.3 di browser: `https://192.168.100.4:5173/` (meringis = LAR ≤ 0.2 → "I")
+2. Task berikutnya: **C9.1 — Monitor LAR Loop** (#38) atau **C9.2 — Reset State** (#39)
+3. Atau perbaiki ⚠️ issues di Review (B3.2 autokorelasi, A2.2 canvas overlay, D10.x binary flash)
 
 ## GitHub CLI Quick Reference
 ```bash
