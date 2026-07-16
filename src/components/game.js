@@ -46,9 +46,6 @@ const FRAME_INTERVAL_MS = 50;
 const DEFAULT_F_MIN = 150;
 const DEFAULT_F_MAX = 350;
 
-/** Canvas background — default / rise / fall. */
-const BG_DEFAULT = '#F8FAFC';
-
 /** Canvas background — stable hover (green, 20 % opacity). */
 const BG_STABLE = 'rgba(34, 197, 94, 0.2)';
 
@@ -84,7 +81,7 @@ class VocaToneGame {
    */
   constructor(canvasElement) {
     this.canvas = canvasElement;
-    this.ctx = canvasElement.getContext('2d');
+    this.ctx = canvasElement.getContext('2d', { alpha: true });
 
     /** Callback that returns the current pitch in Hz (or null/0). */
     this._pitchProvider = null;
@@ -307,13 +304,11 @@ class VocaToneGame {
 
     if (state === 'stable') {
       ctx.fillStyle = BG_STABLE;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     } else if (state === 'shrill') {
       ctx.fillStyle = BG_SHRILL;
-    } else {
-      ctx.fillStyle = BG_DEFAULT;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
-
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
   /**
