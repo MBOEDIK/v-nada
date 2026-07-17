@@ -27,9 +27,14 @@ export default defineConfig({
             options: { cacheName: 'static-resources' }
           },
           {
-            urlPattern: /.*\.wasm.*/,
+            urlPattern: /.*\.(wasm|binarypb|data)$/,
             handler: 'CacheFirst',
             options: { cacheName: 'mediapipe-models' }
+          },
+          {
+            urlPattern: /.*\/assets\/index-.*\.(js|css)$/,
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'game-components' }
           }
         ]
       }
