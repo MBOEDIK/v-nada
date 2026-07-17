@@ -15,7 +15,7 @@
 
 ### A2 — Sequential Validation Engine / Gate Keeper (3 task)
 - [x] **A2.1** — Bangun State Machine (GateKeeper class: valid transisi, onEnter/onExit, throw on invalid)
-- [ ] **A2.2** — Pipeline Kamera → FaceMesh → LAR → Gate
+- [x] **A2.2** — Pipeline Kamera → FaceMesh → LAR → Gate (vision.js + main.js integrasi state machine)
 - [ ] **A2.3** — Fallback Visual + Reset State
 
 ---
@@ -41,13 +41,13 @@
 ## C. Modul 2 — Dual-Sense Engine (4 fitur → 10 task)
 
 ### C6 — MediaPipe Face Mesh (3 task)
-- [ ] **C6.1** — Setup Stream Kamera Depan
-- [ ] **C6.2** — Ekstraksi 4 Landmark Bibir
-- [ ] **C6.3** — Throttling Frame Rate
+- [x] **C6.1** — Setup Stream Kamera Depan (initCamera object API + stopCamera cleanup)
+- [x] **C6.2** — Ekstraksi 4 Landmark Bibir (FACEMESH_LIPS + computeLipAspectRatio)
+- [x] **C6.3** — Throttling Frame Rate (20 FPS throttle + RAF timing)
 
 ### C7 — Euclidean & Lip Aspect Ratio (2 task)
-- [ ] **C7.1** — Fungsi Jarak Euclidean
-- [ ] **C7.2** — Fungsi Lip Aspect Ratio
+- [x] **C7.1** — Fungsi Jarak Euclidean (2D computeEuclideanDistance — sumbu X/Y only)
+- [x] **C7.2** — Fungsi Lip Aspect Ratio (vertical/horizontal ratio)
 
 ### C8 — Logika Validasi /a/ dan /i/ (3 task)
 - [x] **C8.1** — Tentukan Threshold LAR
@@ -77,8 +77,8 @@
 
 | Kategori | Fitur | Task | Selesai |
 |----------|-------|------|---------|
-| A — Core Tech | 2 | 6 | 4 / 6 |
+| A — Core Tech | 2 | 6 | 5 / 6 |
 | B — VocaTone | 3 | 8 | 0 / 8 |
-| C — Dual-Sense | 4 | 10 | 1 / 10 |
+| C — Dual-Sense | 4 | 10 | 5 / 10 |
 | D — UI/UX | 2 | 5 | 0 / 5 |
-| **Total** | **11** | **29** | **5 / 29** |
+| **Total** | **11** | **29** | **10 / 29** |

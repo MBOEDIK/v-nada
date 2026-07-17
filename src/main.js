@@ -1,8 +1,9 @@
 import './styles/main.css';
 import { GateKeeper, STATES } from './utils/gatekeeper.js';
 import { initCamera, stopCamera, computeLipAspectRatio } from './utils/vision.js';
-import { initAudioStream, closeAudioStream, extractPitch } from './utils/audio.js';
-import { f_max } from './utils/constants.js';
+import { initAudioStream, closeAudioStream, extractPitch, calibrateAmbientNoise } from './utils/audio.js';
+import { getProfile, saveProfile, getDefaultProfile } from './utils/db.js';
+import { lar_threshold, f_max } from './utils/constants.js';
 
 const $ = function (id) { return document.getElementById(id); };
 
@@ -26,6 +27,8 @@ let cameraCtrl = null;
 let pitchPollId = null;
 let flashTimeout = null;
 let currentFlash = null;
+let crosshairAnimId = null;
+let canvasCtx = null;
 
 function updateLar(value) { larDisplay.textContent = value.toFixed(2); }
 function updatePitch(value) { pitchDisplay.textContent = value > 0 ? `${Math.round(value)} Hz` : '--'; }
@@ -55,6 +58,61 @@ function setFlash(type) {
   }, 400);
 }
 
+function drawCrosshair(lar) {
+  if (!canvasCtx) { return; }
+  const w = overlayCanvas.width;
+  const h = overlayCanvas.height;
+  canvasCtx.clearRect(0, 0, w, h);
+
+  const cx = w / 2;
+  const cy = h / 2;
+  const ratio = Math.min(1, Math.max(0, (lar - 0.1) / 0.6));
+  const barLength = 20 + ratio * 30;
+  const gap = 6;
+
+  canvasCtx.strokeStyle = 'rgba(13, 71, 161, 0.6)';
+  canvasCtx.lineWidth = 3;
+  canvasCtx.beginPath();
+  canvasCtx.moveTo(cx - barLength - gap, cy);
+  canvasCtx.lineTo(cx - gap, cy);
+  canvasCtx.moveTo(cx + gap, cy);
+  canvasCtx.lineTo(cx + barLength + gap, cy);
+  canvasCtx.moveTo(cx, cy - barLength - gap);
+  canvasCtx.lineTo(cx, cy - gap);
+  canvasCtx.moveTo(cx, cy + gap);
+  canvasCtx.lineTo(cx, cy + barLength + gap);
+  canvasCtx.stroke();
+
+  canvasCtx.strokeStyle = 'rgba(13, 71, 161, 0.3)';
+  canvasCtx.lineWidth = 1;
+  canvasCtx.setLineDash([4, 4]);
+  canvasCtx.beginPath();
+  canvasCtx.arc(cx, cy, 8, 0, Math.PI * 2);
+  canvasCtx.stroke();
+  canvasCtx.setLineDash([]);
+}
+
+function startCrosshair() {
+  stopCrosshair();
+  overlayCanvas.width = cameraFeed.clientWidth;
+  overlayCanvas.height = cameraFeed.clientHeight;
+  canvasCtx = overlayCanvas.getContext('2d');
+  function loop() {
+    if (gatekeeper.getState() === STATES.IDLE) { return; }
+    drawCrosshair(gatekeeper.getState() === STATES.MIC_OPEN || gatekeeper.getState() === STATES.SESSION_ACTIVE ? 0.5 : 0.2);
+    crosshairAnimId = requestAnimationFrame(loop);
+  }
+  crosshairAnimId = requestAnimationFrame(loop);
+}
+
+function stopCrosshair() {
+  if (crosshairAnimId) { cancelAnimationFrame(crosshairAnimId); crosshairAnimId = null; }
+  if (canvasCtx) {
+    canvasCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    canvasCtx = null;
+  }
+}
+
 function startPitchPolling() {
   stopPitchPolling();
   pitchPollId = setInterval(function () {
@@ -80,6 +138,7 @@ async function openAudioGate() {
   audioInitializing = true;
   try {
     await initAudioStream();
+    await calibrateAmbientNoise();
     audioInitialized = true;
   } catch (err) {
     console.warn('[Audio] Mic unavailable:', err.message);
@@ -100,6 +159,7 @@ gatekeeper.onEnter(STATES.CAMERA_ACTIVE, function () {
   setFlash(null);
   updateAccuracy(0);
   updateStars(0);
+  startCrosshair();
 });
 
 gatekeeper.onEnter(STATES.LAR_CHECK, function () {
@@ -131,6 +191,7 @@ gatekeeper.onEnter(STATES.IDLE, function () {
   closeAudioGate();
   stopPitchPolling();
   setFlash(null);
+  stopCrosshair();
 });
 
 function triggerFallback() {
@@ -146,14 +207,14 @@ function onFaceLandmarks(landmarks) {
   const state = gatekeeper.getState();
 
   if (state === STATES.CAMERA_ACTIVE) {
-    if (lar >= 0.5) {
+    if (lar >= lar_threshold.high) {
       gatekeeper.transitionTo(STATES.LAR_CHECK, { mode: 'A' });
-    } else if (lar <= 0.2) {
+    } else if (lar <= lar_threshold.low) {
       gatekeeper.transitionTo(STATES.LAR_CHECK, { mode: 'I' });
     }
   } else if (state === STATES.LAR_CHECK) {
     const mode = gatekeeper.getMode();
-    if ((mode === 'A' && lar >= 0.5) || (mode === 'I' && lar <= 0.2)) {
+    if ((mode === 'A' && lar >= lar_threshold.high) || (mode === 'I' && lar <= lar_threshold.low)) {
       gatekeeper.transitionTo(STATES.MIC_OPEN, { mode });
     } else {
       gatekeeper.fallbackTo(STATES.CAMERA_ACTIVE, { mode: null });
@@ -161,7 +222,7 @@ function onFaceLandmarks(landmarks) {
     }
   } else if (state === STATES.MIC_OPEN || state === STATES.SESSION_ACTIVE) {
     const mode = gatekeeper.getMode();
-    const isValid = (mode === 'A' && lar >= 0.5) || (mode === 'I' && lar <= 0.2);
+    const isValid = (mode === 'A' && lar >= lar_threshold.high) || (mode === 'I' && lar <= lar_threshold.low);
     if (!isValid) {
       if (outOfThresholdSince === 0) { outOfThresholdSince = performance.now(); }
       if (performance.now() - outOfThresholdSince > LAR_DEBOUNCE_MS) {
@@ -199,6 +260,13 @@ async function startSession() {
   setFlash(null);
   overlayCanvas.width = cameraFeed.clientWidth;
   overlayCanvas.height = cameraFeed.clientHeight;
+
+  const profile = await getProfile('default_user');
+  if (!profile) {
+    const def = await getDefaultProfile();
+    await saveProfile(def);
+  }
+
   try {
     cameraCtrl = initCamera({
       videoElement: cameraFeed,
@@ -223,6 +291,7 @@ function stopSession() {
   updatePitch(0);
   updateAccuracy(0);
   setFlash(null);
+  stopCrosshair();
   showError(false);
 }
 
