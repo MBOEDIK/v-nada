@@ -1,11 +1,8 @@
 # DOKUMEN BLUEPRINT PROGRES 50% (PROOF OF CONCEPT)
 
 **Nama Inovasi:** V-NADA (Visual Networked Audio & Digital Articulation)
-
 **Target Tahapan:** Video Demonstrasi Kemajuan Proyek (Babak Seleksi Nasional LIDM ITDP)
-
 **Prinsip Utama:** Otak Komputasi Lokal Berfungsi (*Core Logic Running*), Kosmetik Grafis Ditunda (*Zero Asset Dependency*).
-
 **Patokan:** Dokumen ini berpatokan 100% terhadap project_context\MVP.md dan project_context\IDEA_CONCEPT.md.
 
 ---
