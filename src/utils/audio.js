@@ -1,41 +1,58 @@
+import { f_min, f_max } from './constants.js';
+
 const FFT_SIZE = 2048;
 const NOISE_FLOOR_RMS = 0.01;
-const MIN_PITCH_HZ = 50;
-const MAX_PITCH_HZ = 800;
+const TARGET_SAMPLE_RATE = 44100;
 
 let audioContext = null;
 let analyserNode = null;
 let mediaStream = null;
 let dataArray = null;
 
-export async function initAudioStream() {
-  audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+async function ensureResumed(ctx) {
+  if (ctx.state === 'suspended') {
+    await ctx.resume();
+  }
+}
 
+export async function initAudioStream() {
+  if (audioContext) {
+    await ensureResumed(audioContext);
+    return audioContext;
+  }
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (err) {
+    const ctx = audioContext;
+    audioContext = null;
+    await ctx.close();
+    throw err;
+  }
+  await ensureResumed(audioContext);
   const source = audioContext.createMediaStreamSource(mediaStream);
   analyserNode = audioContext.createAnalyser();
   analyserNode.fftSize = FFT_SIZE;
-
   source.connect(analyserNode);
   dataArray = new Float32Array(analyserNode.fftSize);
-
   return audioContext;
 }
 
-export function closeAudioStream() {
+export async function closeAudioStream() {
   if (mediaStream) {
-    mediaStream.getTracks().forEach((track) => track.stop());
+    mediaStream.getTracks().forEach(function (t) { t.stop(); });
     mediaStream = null;
   }
   if (audioContext) {
-    audioContext.close();
+    await audioContext.close();
     audioContext = null;
   }
   analyserNode = null;
   dataArray = null;
 }
 
-function computeRMS(buffer) {
+export function computeRMS(buffer) {
+  if (!buffer || buffer.length === 0) { return 0; }
   let sum = 0;
   for (let i = 0; i < buffer.length; i++) {
     sum += buffer[i] * buffer[i];
@@ -44,38 +61,56 @@ function computeRMS(buffer) {
 }
 
 function autocorrelationPitch(buffer, sampleRate) {
-  const minLag = Math.floor(sampleRate / MAX_PITCH_HZ);
-  const maxLag = Math.ceil(sampleRate / MIN_PITCH_HZ);
+  const minLag = Math.floor(sampleRate / f_max);
+  const maxLag = Math.ceil(sampleRate / f_min);
+  const len = buffer.length;
+
+  const numLags = maxLag - minLag + 1;
+  const corr = new Float64Array(numLags);
   let bestLag = -1;
   let bestCorrelation = -Infinity;
 
-  for (let lag = minLag; lag <= maxLag; lag++) {
+  for (let lag = minLag, idx = 0; lag <= maxLag; lag++, idx++) {
     let correlation = 0;
-    for (let i = 0; i < buffer.length - lag; i++) {
+    for (let i = 0; i < len - lag; i++) {
       correlation += buffer[i] * buffer[i + lag];
     }
-    correlation /= buffer.length - lag;
-
+    correlation /= len - lag;
+    corr[idx] = correlation;
     if (correlation > bestCorrelation) {
       bestCorrelation = correlation;
       bestLag = lag;
     }
   }
+  if (bestLag === -1) { return 0; }
+  const pitch = sampleRate / bestLag;
 
-  if (bestLag === -1) {return 0;}
-  return sampleRate / bestLag;
+  function subCheck(divisor) {
+    const subLag = Math.round(bestLag * divisor);
+    if (subLag >= minLag && subLag <= maxLag) {
+      return corr[subLag - minLag] > 0.85;
+    }
+    return false;
+  }
+  if (subCheck(2)) { return pitch / 2; }
+  if (subCheck(3)) { return pitch / 3; }
+  if (subCheck(4)) { return pitch / 4; }
+
+  return pitch;
 }
 
 export function extractPitch() {
-  if (!analyserNode || !dataArray) {return 0;}
-
+  if (!analyserNode || !dataArray) { return 0; }
   analyserNode.getFloatTimeDomainData(dataArray);
-
   const rms = computeRMS(dataArray);
-  if (rms < NOISE_FLOOR_RMS) {return 0;}
-
-  const sampleRate = audioContext.sampleRate;
+  if (rms < NOISE_FLOOR_RMS) { return 0; }
+  const sampleRate = audioContext ? audioContext.sampleRate : TARGET_SAMPLE_RATE;
   return autocorrelationPitch(dataArray, sampleRate);
+}
+
+export function getPitchHz() {
+  const p = extractPitch();
+  return p > 0 ? p : 0;
 }
 
 export { FFT_SIZE, NOISE_FLOOR_RMS };

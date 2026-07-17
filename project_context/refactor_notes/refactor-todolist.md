@@ -32,7 +32,7 @@
 |--------|-------|-----------|-----------|-----------|
 | dualsense | 73 | 16 | 42 | 15 |
 | vocatone | 22 | 3 | 8 | 11 |
-| kedua | 41 | 4 | 11 | 26 |
+| kedua | 41 | 0 (4 ✅) | 11 | 26 |
 | **Total** | **136** | **23** | **61** | **52** |
 
 ---
@@ -72,10 +72,10 @@
 
 | # | Item | Sumber | Cross-Ref | Blueprint / PoC Line | Refactor | Catatan |
 |---|------|--------|-----------|---------------------|----------|---------|
-| C01 | `gatekeeper` export pattern (default vs named) — standarisasi | Note-1 CROSS | | — | ❌ | |
-| C02 | `initCamera()` API signature (object vs positional) — standarisasi | Note-1 CROSS | ⤻ S30 | — | ❌ | |
-| C23 | `f_min` value inkonsisten — vocatone 150Hz, dualsense 100Hz | Note-1 CROSS | ⤻ S17, S34 | constants.js | ❌ | |
-| C24 | GateKeeper state machine arsitektur fundamental berbeda | Note-1 CROSS | ⤻ S04, S05, S32 | — | ❌ | |
+| C01 | `gatekeeper` export pattern (default vs named) — standarisasi | Note-1 CROSS | | — | ✅ | Named exports (GateKeeper class + STATES enum) via gatekeeper.js |
+| C02 | `initCamera()` API signature (object vs positional) — standarisasi | Note-1 CROSS | ⤻ S30 | — | ✅ | `initCamera({ videoElement, onFace, onNoFace })` — object-based |
+| C23 | `f_min` value inkonsisten — vocatone 150Hz, dualsense 100Hz | Note-1 CROSS | ⤻ S17, S34 | constants.js | ✅ | `f_min:150` di constants.js, audio.js import dari constants |
+| C24 | GateKeeper state machine arsitektur fundamental berbeda | Note-1 CROSS | ⤻ S04, S05, S32 | — | ✅ | GateKeeper class di gatekeeper.js — valid transisi, onEnter/onExit, throw on invalid |
 
 ---
 
@@ -330,10 +330,10 @@
 
 | # | Item | Prioritas | Branch | Refactor | Keterangan | Catatan |
 |---|------|-----------|--------|----------|-----------|---------|
-| C01 | `gatekeeper` export pattern (default vs named) — standarisasi | 🔴 | kedua | ❌ | Pilih satu pola untuk seluruh codebase | |
-| C02 | `initCamera()` API signature (object vs positional) — standarisasi | 🔴 | kedua | ❌ | Standarisasi ke objek callbacks | |
-| C23 | `f_min` value inkonsisten 150Hz vs 100Hz — sinkronkan | 🔴 | kedua | ❌ | constants.js jadi single source of truth | |
-| C24 | GateKeeper state machine arsitektur — unifikasi | 🔴 | kedua | ❌ | Ambil vocatone sebagai baseline | |
+| C01 | `gatekeeper` export pattern (default vs named) — standarisasi | 🔴 | kedua | ✅ | Pilih satu pola untuk seluruh codebase | Named exports (GateKeeper class + STATES) |
+| C02 | `initCamera()` API signature (object vs positional) — standarisasi | 🔴 | kedua | ✅ | Standarisasi ke objek callbacks | `initCamera({ videoElement, onFace, onNoFace })` |
+| C23 | `f_min` value inkonsisten 150Hz vs 100Hz — sinkronkan | 🔴 | kedua | ✅ | constants.js jadi single source of truth | `f_min:150` — audio.js import dari constants |
+| C24 | GateKeeper state machine arsitektur — unifikasi | 🔴 | kedua | ✅ | Ambil vocatone sebagai baseline | GateKeeper class + valid transisi + onEnter/onExit |
 | C03 | Snake_case vs camelCase — align dg AGENTS.md | 🟡 | dualsense | ❌ | Dualsense banyak camelCase | |
 | C20 | `triggerFallback()` cooldown 1s — standarisasi | 🟡 | dualsense | ❌ | Putuskan perlu/tidak untuk PoC | |
 | C04 | Vite + package.json basicSsl — putuskan perlu/tidak | 🟢 | dualsense | ❌ | Dualsense punya, vocatone tidak | |
@@ -416,6 +416,7 @@
 |---------|-------|-----------|------|
 | 17 Jul 2026 | 1.0 | Initial — konsolidasi 91 temuan Note 1 + 45 temuan Note 2 = 136 item | Agent V-NADA |
 | 17 Jul 2026 | 1.1 | Restruktur: ringkasan by branch + sub-tabel per branch dalam setiap prioritas (🔴🟡🟢) | Agent V-NADA |
+| 17 Jul 2026 | 1.2 | Fase A1 ✅: C01, C02, C23, C24 — GateKeeper state machine, initCamera API, f_min standardisasi | Agent V-NADA |
 
 ---
 
