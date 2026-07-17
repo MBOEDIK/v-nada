@@ -3,16 +3,40 @@ import { f_min, f_max } from './constants.js';
 const FFT_SIZE = 2048;
 const NOISE_FLOOR_RMS = 0.01;
 const TARGET_SAMPLE_RATE = 44100;
+const RMS_CALIBRATION_FRAMES = 10;
 
 let audioContext = null;
 let analyserNode = null;
 let mediaStream = null;
 let dataArray = null;
+let ambientNoiseFloor = NOISE_FLOOR_RMS;
 
 async function ensureResumed(ctx) {
   if (ctx.state === 'suspended') {
     await ctx.resume();
   }
+}
+
+export async function calibrateAmbientNoise() {
+  let totalRms = 0;
+  let count = 0;
+  for (let i = 0; i < RMS_CALIBRATION_FRAMES; i++) {
+    if (!analyserNode || !dataArray) { break; }
+    analyserNode.getFloatTimeDomainData(dataArray);
+    const rms = computeRMS(dataArray);
+    if (rms > 0) {
+      totalRms += rms;
+      count++;
+    }
+    await new Promise(function (r) { setTimeout(r, 50); });
+  }
+  if (count > 0) {
+    ambientNoiseFloor = Math.max(NOISE_FLOOR_RMS, totalRms / count * 1.5);
+  }
+}
+
+export function getAmbientNoiseFloor() {
+  return ambientNoiseFloor;
 }
 
 export async function initAudioStream() {
@@ -22,7 +46,11 @@ export async function initAudioStream() {
   }
   audioContext = new (window.AudioContext || window.webkitAudioContext)();
   try {
-    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        sampleRate: { ideal: TARGET_SAMPLE_RATE },
+      },
+    });
   } catch (err) {
     const ctx = audioContext;
     audioContext = null;
@@ -49,6 +77,7 @@ export async function closeAudioStream() {
   }
   analyserNode = null;
   dataArray = null;
+  ambientNoiseFloor = NOISE_FLOOR_RMS;
 }
 
 export function computeRMS(buffer) {
@@ -103,7 +132,7 @@ export function extractPitch() {
   if (!analyserNode || !dataArray) { return 0; }
   analyserNode.getFloatTimeDomainData(dataArray);
   const rms = computeRMS(dataArray);
-  if (rms < NOISE_FLOOR_RMS) { return 0; }
+  if (rms < ambientNoiseFloor) { return 0; }
   const sampleRate = audioContext ? audioContext.sampleRate : TARGET_SAMPLE_RATE;
   return autocorrelationPitch(dataArray, sampleRate);
 }
