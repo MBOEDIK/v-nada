@@ -14,7 +14,7 @@
 - [x] **A1.3** — Konfigurasi Manifest + Icon
 
 ### A2 — Sequential Validation Engine / Gate Keeper (3 task)
-- [ ] **A2.1** — Bangun State Machine
+- [x] **A2.1** — Bangun State Machine (GateKeeper class: valid transisi, onEnter/onExit, throw on invalid)
 - [ ] **A2.2** — Pipeline Kamera → FaceMesh → LAR → Gate
 - [ ] **A2.3** — Fallback Visual + Reset State
 
@@ -77,8 +77,8 @@
 
 | Kategori | Fitur | Task | Selesai |
 |----------|-------|------|---------|
-| A — Core Tech | 2 | 6 | 3 / 6 |
+| A — Core Tech | 2 | 6 | 4 / 6 |
 | B — VocaTone | 3 | 8 | 0 / 8 |
 | C — Dual-Sense | 4 | 10 | 1 / 10 |
 | D — UI/UX | 2 | 5 | 0 / 5 |
-| **Total** | **11** | **29** | **4 / 29** |
+| **Total** | **11** | **29** | **5 / 29** |
