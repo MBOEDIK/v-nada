@@ -17,3 +17,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .flash-success {
+    background-color: rgba(34, 197, 94, 0.3) !important;
+  }
+  .flash-warning {
+    background-color: rgba(234, 179, 8, 0.3) !important;
+  }
+  .flash-error {
+    background-color: rgba(239, 68, 68, 0.3) !important;
+  }
+  .flash-idle {
+    background-color: rgba(248, 250, 252, 0.15) !important;
+  }
+}
