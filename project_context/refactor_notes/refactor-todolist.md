@@ -32,8 +32,8 @@
 |--------|-------|-----------|-----------|-----------|
 | dualsense | 73 | 16 | 42 | 15 |
 | vocatone | 22 | 3 | 8 | 11 |
-| kedua | 41 | 0 (4 ✅) | 11 | 26 |
-| **Total** | **136** | **23** | **61** | **52** |
+| kedua | 41 | 0 (4 ✅) | 0 (11 ✅) | 26 |
+| **Total** | **136** | **19 (4 ✅)** | **50 (11 ✅)** | **52** |
 
 ---
 
@@ -145,14 +145,14 @@
 
 | # | Item | Sumber | Cross-Ref | Blueprint / PoC Line | Refactor | Catatan |
 |---|------|--------|-----------|---------------------|----------|---------|
-| T11 | Normalisasi sample rate audio ke 44.1/48 kHz | Note-1 TECH | | TECH-03:16 | ❌ | |
-| T12 | Hapus FaceMesh instance saat stop() — cegah memory leak | Note-1 TECH | | TECH-04:41-43 | ❌ | |
-| T13 | Bersihkan `videoElement.srcObject` saat stop() | Note-1 TECH | | TECH-04:41-43 | ❌ | |
-| T14 | MediaPipe model caching — hanya .wasm di-cache | Note-1 TECH | | TECH-02:22-25 | ❌ | |
-| T26 | IndexedDB pipeline dead code — `saveProfile()` tidak pernah dipanggil | Note-1 TECH | | TECH-02:36-41 | ❌ | |
-| T27 | Kedua branch tidak baca `f_min`/`f_max` dari IndexedDB profile — hardcoded | Note-1 TECH | | TECH-02:40 | ❌ | |
-| T28 | Stale-While-Revalidate tidak diimplementasikan — semua CacheFirst | Note-1 TECH | | TECH-02:20 | ❌ | |
-| T30 | Sensor disconnected — tidak ada penanganan khusus | Note-1 TECH | | TECH-01:77 | ❌ | |
+| T11 | Normalisasi sample rate audio ke 44.1/48 kHz | Note-1 TECH | | TECH-03:16 | ✅ | TARGET_SAMPLE_RATE=44100 + sampleRate:ideal di getUserMedia |
+| T12 | Hapus FaceMesh instance saat stop() — cegah memory leak | Note-1 TECH | | TECH-04:41-43 | ✅ | faceMeshInstance.close() di stopCamera() |
+| T13 | Bersihkan `videoElement.srcObject` saat stop() | Note-1 TECH | | TECH-04:41-43 | ✅ | srcObject ditrack dan di-cleanup di stopCamera() |
+| T14 | MediaPipe model caching — hanya .wasm di-cache | Note-1 TECH | | TECH-02:22-25 | ✅ | .binarypb/.data ditambah ke runtime caching CacheFirst |
+| T26 | IndexedDB pipeline dead code — `saveProfile()` tidak pernah dipanggil | Note-1 TECH | | TECH-02:36-41 | ✅ | saveProfile() dipanggil di startSession() untuk seed profil default |
+| T27 | Kedua branch tidak baca `f_min`/`f_max` dari IndexedDB profile — hardcoded | Note-1 TECH | | TECH-02:40 | ✅ | profile default disimpan & dibaca, f_min/f_max dari constants.js sebagai fallback |
+| T28 | Stale-While-Revalidate tidak diimplementasikan — semua CacheFirst | Note-1 TECH | | TECH-02:20 | ✅ | StaleWhileRevalidate untuk game components (assets/index-*.{js,css}) |
+| T30 | Sensor disconnected — tidak ada penanganan khusus | Note-1 TECH | | TECH-01:77 | ✅ | try/catch di FaceMesh onFrame + onNoFace fallback |
 | G09 | RMS threshold tidak dikalibrasi di awal sesi — hardcoded 0.01 | Note-1 GAME | | GAME-01:79 | ❌ | |
 | U28 | Missing real-time LAR indicator animation — crosshair | Note-1 UX | | UX-02:76-78 | ❌ | |
 | S34 | Kedua branch `MIN_PITCH_HZ` hardcoded 50 Hz, tidak pakai `f_min` | Note-2 SCOPE | | AGENTS.md | ❌ | |
@@ -244,21 +244,21 @@
 | T05 | `closeAudioStream()` sync → async | 🟡 | dualsense | ❌ | TECH-03:25 | |
 | T08 | FPS 15 → 20 | 🟡 | dualsense | ❌ | TECH-04:28 | |
 | T09 | Octave correction di vocatone | 🟡 | vocatone | ❌ | TECH-03:42 | |
-| T11 | Normalisasi sample rate audio 44.1/48 kHz | 🟡 | kedua | ❌ | TECH-03:16 | |
-| T12 | Dispose FaceMesh instance saat stop() | 🟡 | kedua | ❌ | TECH-04:41-43 | |
-| T13 | Bersihkan `videoElement.srcObject` saat stop() | 🟡 | kedua | ❌ | TECH-04:41-43 | |
-| T14 | MediaPipe model caching — .binarypb/.data di-precache | 🟡 | kedua | ❌ | TECH-02:22-25 | |
+| T11 | Normalisasi sample rate audio 44.1/48 kHz | 🟡 | kedua | ✅ | TECH-03:16 | |
+| T12 | Dispose FaceMesh instance saat stop() | 🟡 | kedua | ✅ | TECH-04:41-43 | |
+| T13 | Bersihkan `videoElement.srcObject` saat stop() | 🟡 | kedua | ✅ | TECH-04:41-43 | |
+| T14 | MediaPipe model caching — .binarypb/.data di-precache | 🟡 | kedua | ✅ | TECH-02:22-25 | |
 | T18 | `autocorrelationPitch()` — ganti Map dg Float64Array | 🟡 | dualsense | ❌ | TECH-03:27, TECH-04:54 | |
 | T19 | Camera fallback 480p→360p cleanup stream gagal | 🟡 | dualsense | ❌ | TECH-04:14-16 | |
 | T20 | `initAudioStream()` — tambah try/catch getUserMedia | 🟡 | dualsense | ❌ | TECH-03:14-16 | |
 | T21 | `lar_threshold` schema mismatch IndexedDB | 🟡 | vocatone | ❌ | TECH-02:36-41 | |
 | T22 | `initAudioStream()` — tambah `audioContext.resume()` | 🟡 | dualsense | ❌ | TECH-03:15-16 | |
 | T23 | `stopSession()` — reset semua state variables | 🟡 | dualsense | ❌ | TECH-04:41-43 | |
-| T26 | IndexedDB pipeline dead code — `saveProfile()` | 🟡 | kedua | ❌ | TECH-02:36-41 | |
-| T27 | Baca `f_min`/`f_max` dari IndexedDB profile | 🟡 | kedua | ❌ | TECH-02:40 | |
-| T28 | Stale-While-Revalidate untuk game components | 🟡 | kedua | ❌ | TECH-02:20 | |
+| T26 | IndexedDB pipeline dead code — `saveProfile()` | 🟡 | kedua | ✅ | TECH-02:36-41 | |
+| T27 | Baca `f_min`/`f_max` dari IndexedDB profile | 🟡 | kedua | ✅ | TECH-02:40 | |
+| T28 | Stale-While-Revalidate untuk game components | 🟡 | kedua | ✅ | TECH-02:20 | |
 | T29 | Race condition `openAudioGate()` — tambah guard | 🟡 | dualsense | ❌ | TECH-03:14-16 | |
-| T30 | Sensor disconnected — penanganan khusus | 🟡 | kedua | ❌ | TECH-01:77 | |
+| T30 | Sensor disconnected — penanganan khusus | 🟡 | kedua | ✅ | TECH-01:77 | |
 | T31 | Camera start error — user-facing feedback di vocatone | 🟡 | vocatone | ❌ | TECH-04, UX-03:50 | |
 | T32 | Face loss — tutup microphone saat MIC_OPEN | 🟡 | dualsense | ❌ | TECH-01:74 | |
 | T33 | Mic denied — user-facing error di dualsense | 🟡 | dualsense | ❌ | TECH-03:14-16, UX-03:50 | |
@@ -280,7 +280,7 @@
 | G04 | Wrong mouth → siluet merah | 🟡 | dualsense | ❌ | GAME-02:87 | |
 | G05 | Face loss — pause + recalibration mode | 🟡 | dualsense | ❌ | UX-03:51 | |
 | G08 | `_drawBackground()` fall/rise → #F8FAFC | 🟡 | vocatone | ❌ | GAME-01:19,22,62 | |
-| G09 | Kalibrasi RMS threshold di awal sesi | 🟡 | kedua | ❌ | GAME-01:79 | |
+| G09 | Kalibrasi RMS threshold di awal sesi | 🟡 | kedua | ✅ | GAME-01:79 | |
 | G10 | Render Character & Gate di DualSense | 🟡 | dualsense | ❌ | GAME-02:16-17 | |
 | G06 | Stability timer 0.5s → min 1s | 🟢 | vocatone | ❌ | GAME-01:56-58 | |
 | G07 | Siluet oval — garis putus-putus | 🟢 | kedua | ❌ | VISUAL-02:14 | |
@@ -378,7 +378,7 @@
 | S29 | `closeAudioStream()` tanpa `await` | 🟡 | dualsense | ❌ | 42 | |
 | S31 | `isF0*` flags stale setelah fallback | 🟡 | dualsense | ❌ | 70, 79 | |
 | S33 | IDLE→CAMERA_ACTIVE via `onFaceLandmarks()` bypass session init | 🟡 | dualsense | ❌ | 26 | |
-| S34 | `MIN_PITCH_HZ` hardcoded 50 Hz — pakai `f_min` | 🟡 | kedua | ❌ | AGENTS.md | |
+| S34 | `MIN_PITCH_HZ` hardcoded 50 Hz — pakai `f_min` | 🟡 | kedua | ✅ | AGENTS.md | |
 | S36 | `accuracyDisplay` teks "SHRILL"/"STABLE" — scope creep | 🟡 | dualsense | ❌ | 79, 16 | |
 | S37 | `vowel-indicator` DOM overlay huruf A/I 72pt — scope creep | 🟡 | dualsense | ❌ | 78-82 | |
 | S38 | `initAudioStream()` tidak cleanup AudioContext saat mic gagal | 🟡 | dualsense | ❌ | 42 | |
@@ -417,6 +417,7 @@
 | 17 Jul 2026 | 1.0 | Initial — konsolidasi 91 temuan Note 1 + 45 temuan Note 2 = 136 item | Agent V-NADA |
 | 17 Jul 2026 | 1.1 | Restruktur: ringkasan by branch + sub-tabel per branch dalam setiap prioritas (🔴🟡🟢) | Agent V-NADA |
 | 17 Jul 2026 | 1.2 | Fase A1 ✅: C01, C02, C23, C24 — GateKeeper state machine, initCamera API, f_min standardisasi | Agent V-NADA |
+| 17 Jul 2026 | 1.3 | Fase A2 ✅: T11-T14, T26-T30, G09, U28, S34 — sample rate, caching, IndexedDB, RMS kalibrasi, crosshair, error handling | Agent V-NADA |
 
 ---
 

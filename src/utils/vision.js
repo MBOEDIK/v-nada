@@ -13,6 +13,7 @@ let cameraInstance = null;
 let lastFaceTime = 0;
 let noFacePollId = null;
 let onNoFaceCallback = null;
+let videoElementRef = null;
 
 function throttleFrame(timestamp) {
   if (timestamp - lastFrameTime < FRAME_INTERVAL) { return false; }
@@ -52,6 +53,7 @@ function stopNoFacePoll() {
 }
 
 export function initCamera({ videoElement, onFace, onNoFace } = {}) {
+  videoElementRef = videoElement;
   onNoFaceCallback = onNoFace || null;
 
   const faceMesh = new FaceMesh({
@@ -76,7 +78,11 @@ export function initCamera({ videoElement, onFace, onNoFace } = {}) {
 
   const camera = new Camera(videoElement, {
     onFrame: async function () {
-      await faceMesh.send({ image: videoElement });
+      try {
+        await faceMesh.send({ image: videoElement });
+      } catch (_) {
+        if (onNoFaceCallback) { onNoFaceCallback(); }
+      }
     },
     width: 480,
     height: 480,
@@ -97,6 +103,15 @@ export function stopCamera() {
   if (faceMeshInstance) {
     try { faceMeshInstance.close(); } catch (_) { /* ignore */ }
     faceMeshInstance = null;
+  }
+  if (videoElementRef) {
+    try {
+      if (videoElementRef.srcObject) {
+        videoElementRef.srcObject.getTracks().forEach(function (t) { t.stop(); });
+        videoElementRef.srcObject = null;
+      }
+    } catch (_) { /* ignore */ }
+    videoElementRef = null;
   }
   lastFaceTime = 0;
   lastFrameTime = 0;
