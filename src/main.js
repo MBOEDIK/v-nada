@@ -192,6 +192,10 @@ function startPitchPolling() {
         accuracyDisplay.textContent = 'STABLE';
         accuracyDisplay.style.color = '#22C55E';
       }
+      // Update stars based on LAR accuracy + pitch stability
+      const larAcc = Math.min(100, Math.max(0, (1 - Math.abs(lastLar - lar_threshold.high) / lar_threshold.high) * 100));
+      const pitchStability = Math.min(3, Math.floor(stableCount / 2));
+      updateStars(pitchStability > 0 ? Math.min(3, Math.floor(larAcc / 33) + 1) : 0);
     } else {
       isF0Shrill = false;
       isF0InRange = false;
@@ -295,11 +299,7 @@ function startMonitor() {
     if (faceGone) {
       clearAllFlash();
       flashOverlay.classList.add('flash-idle');
-      if (faceEverDetected) {
-        showError(true, 'No Face Detected', 'Please position your face in the camera frame');
-      } else {
-        showError(false);
-      }
+      showError(false);
     } else if (monState === STATES.MIC_OPEN && monMode === 'I') {
       if (lastMouthWidth <= restingMouthWidth * 1.15) {
         showError(true, 'Not Spreading', 'Spread your lips wide and grin for /i/');
@@ -390,7 +390,7 @@ function onFaceLandmarks(landmarks) {
   } else if (lastLar > lar_threshold.low) {
     larDisplay.style.color = '#EAB308';
   } else {
-    larDisplay.style.color = '#0D47A1';
+    larDisplay.style.color = '#94A3B8';
   }
 
   if (currentState === STATES.IDLE) {
@@ -447,7 +447,11 @@ function onFaceLandmarks(landmarks) {
   if (currentState !== STATES.MIC_OPEN) {
     if (currentState !== STATES.LAR_CHECK) {
       clearAllFlash();
-      flashOverlay.classList.add('flash-error');
+      if (fallbackMode) {
+        flashOverlay.classList.add('flash-error');
+      } else {
+        flashOverlay.classList.add('flash-idle');
+      }
     }
   } else if (isF0Shrill) {
     clearAllFlash();
@@ -547,6 +551,7 @@ function stopDualSenseSession() {
 
   updateLar(0);
   updatePitch(0);
+  updateStars(0);
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -598,6 +603,7 @@ function stopVocaTone() {
 
   updateVocPitch(0);
   updateVocStatus('Idle');
+  updateStars(0);
 
   const ctx = gameCanvas.getContext('2d');
   ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
@@ -615,6 +621,7 @@ function updateVocStatus(text) {
 
 function startVocPitchDisplay() {
   stopVocPitchDisplay();
+  let vocStableCount = 0;
   vocPitchInterval = setInterval(() => {
     if (!vocActive) {
       stopVocPitchDisplay();
@@ -622,6 +629,14 @@ function startVocPitchDisplay() {
     }
     const pitch = extractPitch();
     updateVocPitch(pitch);
+    updateVocStatus(pitch > 0 ? 'Active' : 'Idle');
+    if (pitch >= f_min && pitch <= f_max) {
+      vocStableCount++;
+      updateStars(Math.min(3, Math.floor(vocStableCount / 3) + 1));
+    } else {
+      vocStableCount = 0;
+      updateStars(0);
+    }
   }, 150);
 }
 

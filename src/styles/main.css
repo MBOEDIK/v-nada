@@ -42,8 +42,14 @@
 }
 
 .flash-idle {
-  background-color: #EF4444;
-  opacity: 0.15 !important;
+  background-color: #F8FAFC;
+  opacity: 0.25 !important;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.35; }
 }
 
 #flash-overlay {

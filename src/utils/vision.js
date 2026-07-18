@@ -88,6 +88,7 @@ function initCamera(videoElement, callbacks) {
     refineLandmarks: true,
     minDetectionConfidence: 0.5,
     minTrackingConfidence: 0.5,
+    selfieMode: true,
   });
 
   face_mesh.onResults((results) => {

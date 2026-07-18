@@ -25,7 +25,7 @@ const OBJ_W = 40;
 const OBJ_H = 40;
 
 /** Rise speed — px per frame upward (negative Y). */
-const RISE_SPEED = 2;
+const RISE_SPEED = 4;
 
 /** Gravity acceleration — px per frame² downward. */
 const GRAVITY = 1.5;
@@ -34,7 +34,7 @@ const GRAVITY = 1.5;
 const MAX_FALL_SPEED = 8;
 
 /** Duration (ms) pitch must stay in target range to trigger hover. */
-const STABLE_DURATION_MS = 500;
+const STABLE_DURATION_MS = 1200;
 
 /** Allowed ±fraction deviation from target frequency boundaries (0.1 = ±10%). */
 const FREQ_TOLERANCE = 0.1;
