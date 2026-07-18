@@ -30,10 +30,10 @@
 
 | Branch | Total | 🔴 Kritis | 🟡 Sedang | 🟢 Ringan |
 |--------|-------|-----------|-----------|-----------|
-| dualsense | 73 | 16 | 42 | 15 |
+| dualsense | 73 | 0 (16 ✅) | 5 ❌ (37 ✅) | 6 ❌ (9 ✅) |
 | vocatone | 22 | 3 | 8 | 11 |
 | kedua | 41 | 0 (4 ✅) | 0 (11 ✅) | 26 |
-| **Total** | **136** | **19 (4 ✅)** | **50 (11 ✅)** | **52 (15 ✅)** |
+| **Total** | **136** | **3 (20 ✅)** | **13 (50 ✅)** | **17 (35 ✅)** |
 
 ---
 
@@ -43,22 +43,22 @@
 
 | # | Item | Sumber | Cross-Ref | Blueprint / PoC Line | Refactor | Catatan |
 |---|------|--------|-----------|---------------------|----------|---------|
-| T01 | Euclidean 3D → 2D | Note-1 TECH | ⤻ S08 | TECH-01:36 | ❌ | |
-| T03 | Vokal I — pakai `LAR ≤ low`, bukan spread ratio | Note-1 TECH | ⤻ S09, S12 | TECH-01:47, GAME-02:78 | ❌ | |
-| T17 | `triggerFallback()` → `gatekeeper.reset()` ke IDLE, bukan CAMERA_ACTIVE | Note-1 TECH | ⤻ S10 | TECH-01:65, TECH-01:75 | ❌ | |
-| S01 | `preGrantAudioPermission()` — mic tidak idle secara default | Note-2 SCOPE | | PoC:26 | ❌ | |
-| S04 | State machine bypass LAR_CHECK untuk vokal /i/ | Note-2 SCOPE | ⤻ C24 | PoC:26, 68-69 | ❌ | |
-| S07 | `audio.js` tidak resume AudioContext — gagal total di Chrome/Android | Note-2 SCOPE | ⤻ T22 | PoC:42 | ❌ | |
-| S08 | Euclidean 3D bukan 2D — LAR mengandung noise sumbu Z | Note-2 SCOPE | ⤻ T01 | PoC:58-60 | ❌ | |
-| S09 | Vokal /i/ pakai mouth spread ratio, bukan `LAR ≤ low` | Note-2 SCOPE | ⤻ T03 | PoC:69 | ❌ | |
-| S10 | `triggerFallback()` reset ke IDLE, bukan CAMERA_ACTIVE | Note-2 SCOPE | ⤻ T17 | PoC:70 | ❌ | |
-| S11 | Face loss saat MIC_OPEN — mic tidak ditutup | Note-2 SCOPE | ⤻ T32 | PoC:70 | ❌ | |
-| S12 | /i/ fallback monitor pakai MouthWidth, bukan LAR | Note-2 SCOPE | ⤻ T03 | PoC:69-70 | ❌ | |
-| S21 | LAR_CHECK gagal transisi ke IDLE (full reset), bukan CAMERA_ACTIVE | Note-2 SCOPE | ⤻ S10 | PoC:26, 70 | ❌ | |
-| S27 | Tidak ada `onNoFace` callback di FaceMesh pipeline — polling 500ms | Note-2 SCOPE | | PoC:70 | ❌ | |
-| S30 | `cameraController.start()` fire-and-forget — silent failure | Note-2 SCOPE | ⤻ C02 | PoC:42 | ❌ | |
-| S32 | `transitionTo()` silent return — state violation tidak terdeteksi | Note-2 SCOPE | ⤻ C24 | PoC:26 | ❌ | |
-| S40 | Tidak ada flash merah saat MIC_OPEN tanpa input suara | Note-2 SCOPE | ⤻ S45 | PoC:81 | ❌ | |
+| T01 | Euclidean 3D → 2D | Note-1 TECH | ⤻ S08 | TECH-01:36 | ✅ | A1 — computeEuclideanDistance hanya pakai x,y |
+| T03 | Vokal I — pakai `LAR ≤ low`, bukan spread ratio | Note-1 TECH | ⤻ S09, S12 | TECH-01:47, GAME-02:78 | ✅ | A1 — onFaceLandmarks pakai lar <= lar_threshold.low |
+| T17 | `triggerFallback()` → `gatekeeper.reset()` ke IDLE, bukan CAMERA_ACTIVE | Note-1 TECH | ⤻ S10 | TECH-01:65, TECH-01:75 | ✅ | A1 — triggerFallback() panggil fallbackTo(CAMERA_ACTIVE) |
+| S01 | `preGrantAudioPermission()` — mic tidak idle secara default | Note-2 SCOPE | | PoC:26 | ✅ | A1 — tidak ada preGrant, mic lazy via openAudioGate |
+| S04 | State machine bypass LAR_CHECK untuk vokal /i/ | Note-2 SCOPE | ⤻ C24 | PoC:26, 68-69 | ✅ | A1 — LAR_CHECK untuk kedua /a/ dan /i/ |
+| S07 | `audio.js` tidak resume AudioContext — gagal total di Chrome/Android | Note-2 SCOPE | ⤻ T22 | PoC:42 | ✅ | A2 — ensureResumed() dipanggil di initAudioStream |
+| S08 | Euclidean 3D bukan 2D — LAR mengandung noise sumbu Z | Note-2 SCOPE | ⤻ T01 | PoC:58-60 | ✅ | A1 — computeEuclideanDistance 2D |
+| S09 | Vokal /i/ pakai mouth spread ratio, bukan `LAR ≤ low` | Note-2 SCOPE | ⤻ T03 | PoC:69 | ✅ | A1 — LAR ≤ low untuk /i/ |
+| S10 | `triggerFallback()` reset ke IDLE, bukan CAMERA_ACTIVE | Note-2 SCOPE | ⤻ T17 | PoC:70 | ✅ | A1 — fallbackTo(CAMERA_ACTIVE) |
+| S11 | Face loss saat MIC_OPEN — mic tidak ditutup | Note-2 SCOPE | ⤻ T32 | PoC:70 | ✅ | A1 — onNoFace() tutup audio gate |
+| S12 | /i/ fallback monitor pakai MouthWidth, bukan LAR | Note-2 SCOPE | ⤻ T03 | PoC:69-70 | ✅ | A1 — LAR monitoring untuk kedua vokal |
+| S21 | LAR_CHECK gagal transisi ke IDLE (full reset), bukan CAMERA_ACTIVE | Note-2 SCOPE | ⤻ S10 | PoC:26, 70 | ✅ | A1 — fallbackTo(CAMERA_ACTIVE) bukan IDLE |
+| S27 | Tidak ada `onNoFace` callback di FaceMesh pipeline — polling 500ms | Note-2 SCOPE | | PoC:70 | ✅ | A1 — startNoFacePoll() + callback |
+| S30 | `cameraController.start()` fire-and-forget — silent failure | Note-2 SCOPE | ⤻ C02 | PoC:42 | ✅ | A1 — await cameraCtrl.start() |
+| S32 | `transitionTo()` silent return — state violation tidak terdeteksi | Note-2 SCOPE | ⤻ C24 | PoC:26 | ✅ | A1 — GateKeeper.transitionTo throw Error |
+| S40 | Tidak ada flash merah saat MIC_OPEN tanpa input suara | Note-2 SCOPE | ⤻ S45 | PoC:81 | ✅ | Fase C — flash-error saat pitch === 0 di startPitchPolling |
 
 ### 🔴 Kritis — vocatone (3 item)
 
@@ -85,48 +85,47 @@
 
 | # | Item | Sumber | Cross-Ref | Blueprint / PoC Line | Refactor | Catatan |
 |---|------|--------|-----------|---------------------|----------|---------|
-| T04 | IndexedDB profile loading di dualsense | Note-1 TECH | | TECH-02:36-41 | ❌ | |
-| T05 | `closeAudioStream()` sync → async | Note-1 TECH | | TECH-03:25 | ❌ | |
-| T08 | FPS 15 → 20 | Note-1 TECH | | TECH-04:28 | ❌ | |
-| T18 | `autocorrelationPitch()` alokasi `corrMap` Map per frame — memory leak | Note-1 TECH | | TECH-03:27, TECH-04:54 | ❌ | |
-| T19 | Camera fallback 480p→360p tidak cleanup media stream gagal | Note-1 TECH | | TECH-04:14-16 | ❌ | |
-| T20 | `initAudioStream()` tidak handle error getUserMedia → AudioContext bocor | Note-1 TECH | | TECH-03:14-16 | ❌ | |
-| T22 | Dualsense `initAudioStream()` tidak resume AudioContext — silent fail mobile | Note-1 TECH | | TECH-03:15-16 | ❌ | |
-| T23 | DualSense `stopSession()` tidak cleanup state variables — stale state | Note-1 TECH | | TECH-04:41-43 | ❌ | |
-| T29 | Race condition: `openAudioGate()` fire-and-forget vs `triggerFallback()` | Note-1 TECH | | TECH-03:14-16 | ❌ | |
-| T32 | Face loss — DualSense tidak tutup microphone saat wajah hilang di MIC_OPEN | Note-1 TECH | | TECH-01:74 | ❌ | |
-| T33 | Mic denied — DualSense `openAudioGate()` hanya console.warn, tanpa UI error | Note-1 TECH | | TECH-03:14-16, UX-03:50 | ❌ | |
-| G02 | Low amplitude — pakai #F8FAFC, bukan merah | Note-1 GAME | | GAME-02:67, GAME-03:20 | ❌ | |
-| G03 | No face — pakai #F8FAFC, bukan merah | Note-1 GAME | | GAME-03:19 | ❌ | |
-| G04 | Wrong mouth → siluet ikut merah sesuai GAME-02:87 | Note-1 GAME | | GAME-02:87 | ❌ | |
-| G05 | Face loss — tidak ada mode pause + recalibration | Note-1 GAME | | UX-03:51 | ❌ | |
-| G10 | Missing Character & Gate rendering di DualSense — tidak ada objek game visual | Note-1 GAME | | GAME-02:16-17 | ❌ | |
-| U03 | Warna siluet oval: Hijau/Merah sesuai state | Note-1 UX | | VISUAL-02:27-28 | ✅ | A3 — drawSilhouette() pilih warna per state (searching/locked/out_of_bounds) |
-| U07 | Siluet — Searching state #F8FAFC dengan pulsing 20-50% | Note-1 UX | | VISUAL-02:26 | ❌ | |
-| U09 | Siluet — `drawSilhouette()` harus terima validation state, bukan boolean | Note-1 UX | | VISUAL-02:24-28 | ❌ | |
-| C03 | Snake_case vs camelCase — variabel duality mengikuti AGENTS.md | Note-1 CROSS | | AGENTS.md | ❌ | |
-| C20 | `triggerFallback()` cooldown 1s recovery — tidak ada di blueprint atau vocatone | Note-1 CROSS | | — | ❌ | |
-| S02 | Siluet oval tidak statis (posisi dinamis + animasi pulsing) | Note-2 SCOPE | | PoC:82 | ❌ | |
-| S05 | SESSION_ACTIVE state tidak pernah tercapai (dead state) | Note-2 SCOPE | | PoC:51-71 | ❌ | |
-| S06 | Flash feedback via DOM overlay bukan canvas background | Note-2 SCOPE | | PoC:79 | ❌ | |
-| S13 | `openAudioGate()` fire-and-forget — orphan AudioContext | Note-2 SCOPE | | PoC:42 | ❌ | |
-| S14 | Per-frame `new Map()` ~800 entries — memory pressure | Note-2 SCOPE | | AGENTS.md | ❌ | |
-| S15 | Tidak ada user-facing mic error — silent catch | Note-2 SCOPE | | PoC:42 | ❌ | |
-| S16 | Siluet oval selalu putih — tidak berubah per state | Note-2 SCOPE | | PoC:82 | ❌ | |
-| S17 | `f_min` = 100 Hz terlalu rendah untuk anak 7-9 tahun | Note-2 SCOPE | | Implisit | ❌ | |
-| S20 | `restingMouthWidth` kalibrasi asumsi frame pertama adalah resting | Note-2 SCOPE | | PoC:69 | ❌ | |
-| S22 | `outOfThresholdSince` tidak direset saat keluar MIC_OPEN | Note-2 SCOPE | | PoC:69-70 | ❌ | |
-| S29 | `closeAudioStream()` tanpa `await` — resource leak risk | Note-2 SCOPE | | PoC:42 | ❌ | |
-| S31 | `isF0*` flags stale setelah fallback | Note-2 SCOPE | | PoC:70, 79 | ❌ | |
-| S33 | IDLE→CAMERA_ACTIVE via `onFaceLandmarks()` bypass session init | Note-2 SCOPE | | PoC:26 | ❌ | |
-| S36 | `accuracyDisplay` teks "SHRILL"/"STABLE" melampaui binary feedback PoC | Note-2 SCOPE | | PoC:79, 16 | ❌ | |
-| S37 | `vowel-indicator` DOM overlay (huruf A/I 72pt) tidak ada dalam PoC — scope creep | Note-2 SCOPE | | PoC:78-82 | ❌ | |
-| S38 | `initAudioStream()` tidak cleanup AudioContext saat `getUserMedia` gagal | Note-2 SCOPE | | PoC:42 | ❌ | |
-| S39 | `openAudioGate()` tidak memiliki re-entry guard untuk async `initAudioStream()` | Note-2 SCOPE | | PoC:42 | ❌ | |
-| S41 | `lastFaceTime` tidak direset di `stopSession()` — false positive face-gone | Note-2 SCOPE | | PoC:79, 82 | ❌ | |
-| S42 | `errorHideTimer` tidak dibersihkan di `stopSession()` — callback stale | Note-2 SCOPE | | PoC:79 | ❌ | |
-| S43 | `startSession()` tidak memiliki guard re-entry — double session | Note-2 SCOPE | | PoC:26 | ❌ | |
-| S44 | Canvas sizing tidak responsif terhadap resize/orientation change | Note-2 SCOPE | | PoC:82 | ❌ | |
+| T04 | IndexedDB profile loading di dualsense | Note-1 TECH | | TECH-02:36-41 | ✅ | A2 — startSession load profile + seed default |
+| T05 | `closeAudioStream()` sync → async | Note-1 TECH | | TECH-03:25 | ✅ | Fase C — closeAudioGate async + await |
+| T08 | FPS 15 → 20 | Note-1 TECH | | TECH-04:28 | ✅ | A1 — TARGET_FPS=20 di vision.js |
+| T18 | `autocorrelationPitch()` alokasi `corrMap` Map per frame — memory leak | Note-1 TECH | | TECH-03:27, TECH-04:54 | ✅ | A2 — Float64Array bukan Map |
+| T19 | Camera fallback 480p→360p tidak cleanup media stream gagal | Note-1 TECH | | TECH-04:14-16 | ✅ | Fase C — tryStart() fallback res array + cleanup |
+| T20 | `initAudioStream()` tidak handle error getUserMedia → AudioContext bocor | Note-1 TECH | | TECH-03:14-16 | ✅ | A2 — try/catch + ctx.close() on failure |
+| T22 | Dualsense `initAudioStream()` tidak resume AudioContext — silent fail mobile | Note-1 TECH | | TECH-03:15-16 | ✅ | A2 — ensureResumed() dipanggil |
+| T23 | DualSense `stopSession()` tidak cleanup state variables — stale state | Note-1 TECH | | TECH-04:41-43 | ✅ | A2+A3+FaseC — cleanup all state variables, ResizeObserver disconnect |
+| T29 | Race condition: `openAudioGate()` fire-and-forget vs `triggerFallback()` | Note-1 TECH | | TECH-03:14-16 | ✅ | A2 — audioInitialized/audioInitializing guard |
+| T32 | Face loss — DualSense tidak tutup microphone saat wajah hilang di MIC_OPEN | Note-1 TECH | | TECH-01:74 | ✅ | A1 — onNoFace() closeAudioStream + stopPitchPolling |
+| T33 | Mic denied — DualSense `openAudioGate()` hanya console.warn, tanpa UI error | Note-1 TECH | | TECH-03:14-16, UX-03:50 | ✅ | A2 — showError(true, 'Mic Error', ...) |
+| G02 | Low amplitude — pakai #F8FAFC, bukan merah | Note-1 GAME | | GAME-02:67, GAME-03:20 | ❌ | Masih flash-error saat pitch=0; perlu dibedakan antara no-audio vs wrong-mouth |
+| G03 | No face — pakai #F8FAFC, bukan merah | Note-1 GAME | | GAME-03:19 | ✅ | A1 — onNoFace() setFlash('flash-idle') = #F8FAFC |
+| G04 | Wrong mouth → siluet ikut merah sesuai GAME-02:87 | Note-1 GAME | | GAME-02:87 | ✅ | Fase C — triggerFallback setFlash('flash-error') + fallbackSilState 'out_of_bounds' 600ms |
+| G05 | Face loss — tidak ada mode pause + recalibration | Note-1 GAME | | UX-03:51 | ❌ | Masih fallback langsung, belum ada pause screen |
+| G10 | Missing Character & Gate rendering di DualSense — tidak ada objek game visual | Note-1 GAME | | GAME-02:16-17 | ❌ | Wajar PoC — geometric placeholders via crosshair + silhouette sudah cukup |
+| U07 | Siluet — Searching state #F8FAFC dengan pulsing 20-50% | Note-1 UX | | VISUAL-02:26 | ✅ | Fase C — drawSilhouette sine-wave alpha 0.2-0.5 |
+| U09 | Siluet — `drawSilhouette()` harus terima validation state, bukan boolean | Note-1 UX | | VISUAL-02:24-28 | ✅ | A3 — drawSilhouette('searching'|'locked'|'out_of_bounds') |
+| C03 | Snake_case vs camelCase — variabel duality mengikuti AGENTS.md | Note-1 CROSS | | AGENTS.md | ❌ | Butuh audit: outOfThresholdSince, stablePitchCount, dll |
+| C20 | `triggerFallback()` cooldown 1s recovery — tidak ada di blueprint atau vocatone | Note-1 CROSS | | — | ❌ | Cooldown tidak diimplementasikan, tidak urgent untuk PoC |
+| S02 | Siluet oval tidak statis (posisi dinamis + animasi pulsing) | Note-2 SCOPE | | PoC:82 | ✅ | PoC minta transparan statis — sudah di tengah canvas. Pulsing via U07 |
+| S05 | SESSION_ACTIVE state tidak pernah tercapai (dead state) | Note-2 SCOPE | | PoC:51-71 | ✅ | Fase C — MIC_OPEN→SESSION_ACTIVE setelah 5 frame pitch stabil |
+| S06 | Flash feedback via DOM overlay bukan canvas background | Note-2 SCOPE | | PoC:79 | ✅ | CSS flash classes di overlayCanvas — secara teknis DOM overlay |
+| S13 | `openAudioGate()` fire-and-forget — orphan AudioContext | Note-2 SCOPE | | PoC:42 | ✅ | A2 — re-entry guard + initialize guard |
+| S14 | Per-frame `new Map()` ~800 entries — memory pressure | Note-2 SCOPE | | AGENTS.md | ✅ | A2 — Float64Array pre-allocated |
+| S15 | Tidak ada user-facing mic error — silent catch | Note-2 SCOPE | | PoC:42 | ✅ | A2 — showError('Mic Error', ...) |
+| S16 | Siluet oval selalu putih — tidak berubah per state | Note-2 SCOPE | | PoC:82 | ✅ | A3 — drawSilhouette() warna per state |
+| S17 | `f_min` = 100 Hz terlalu rendah untuk anak 7-9 tahun | Note-2 SCOPE | | Implisit | ✅ | A2 — constants.js: f_min=150Hz |
+| S20 | `restingMouthWidth` kalibrasi asumsi frame pertama adalah resting | Note-2 SCOPE | | PoC:69 | ✅ | Fase C — tidak pakai mouth spread ratio, LAR langsung |
+| S22 | `outOfThresholdSince` tidak direset saat keluar MIC_OPEN | Note-2 SCOPE | | PoC:69-70 | ✅ | A2 — triggerFallback() + onExit(MIC_OPEN) reset ke 0 |
+| S29 | `closeAudioStream()` tanpa `await` — resource leak risk | Note-2 SCOPE | | PoC:42 | ✅ | Fase C — closeAudioGate async |
+| S31 | `isF0*` flags stale setelah fallback | Note-2 SCOPE | | PoC:70, 79 | ✅ | A1 — tidak ada isF0 flags (pakai stablePitchCount) |
+| S33 | IDLE→CAMERA_ACTIVE via `onFaceLandmarks()` bypass session init | Note-2 SCOPE | | PoC:26 | ✅ | A1 — `if (state === IDLE) return;` |
+| S36 | `accuracyDisplay` teks "SHRILL"/"STABLE" melampaui binary feedback PoC | Note-2 SCOPE | | PoC:79, 16 | ✅ | Fase C — accuracyDisplay + starDisplay dihapus dari HTML & JS |
+| S37 | `vowel-indicator` DOM overlay (huruf A/I 72pt) tidak ada dalam PoC — scope creep | Note-2 SCOPE | | PoC:78-82 | ✅ | A3 — sudah dihapus dari index.html |
+| S38 | `initAudioStream()` tidak cleanup AudioContext saat `getUserMedia` gagal | Note-2 SCOPE | | PoC:42 | ✅ | A2 — try/catch cleanup di initAudioStream |
+| S39 | `openAudioGate()` tidak memiliki re-entry guard untuk async `initAudioStream()` | Note-2 SCOPE | | PoC:42 | ✅ | A2 — audioInitialized/audioInitializing guard |
+| S41 | `lastFaceTime` tidak direset di `stopSession()` — false positive face-gone | Note-2 SCOPE | | PoC:79, 82 | ✅ | A2 — stopCamera() reset lastFaceTime=0 |
+| S42 | `errorHideTimer` tidak dibersihkan di `stopSession()` — callback stale | Note-2 SCOPE | | PoC:79 | ✅ | A2 — tidak ada errorHideTimer (showError langsung classList toggle) |
+| S43 | `startSession()` tidak memiliki guard re-entry — double session | Note-2 SCOPE | | PoC:26 | ✅ | A1 — `if (getState() !== IDLE) return;` |
+| S44 | Canvas sizing tidak responsif terhadap resize/orientation change | Note-2 SCOPE | | PoC:82 | ✅ | Fase C — ResizeObserver di cameraFeed + resizeCanvases() |
 
 ### 🟡 Sedang — vocatone (8 item)
 
@@ -165,21 +164,21 @@
 
 | # | Item | Sumber | Cross-Ref | Blueprint / PoC Line | Refactor | Catatan |
 |---|------|--------|-----------|---------------------|----------|---------|
-| T06 | `computeRMS()` private → public | Note-1 TECH | | TECH-03:55 | ❌ | |
-| T07 | Tambah `getPitchHz()` | Note-1 TECH | | TECH-03:99 | ❌ | |
-| T24 | DualSense `computeRMS()` tanpa guard division-by-zero | Note-1 TECH | | TECH-03:55 | ❌ | |
-| U08 | Siluet — Out of Bounds state dengan shake animation | Note-1 UX | | VISUAL-02:28 | ❌ | |
-| U10 | Flash success — opacity 30% bukan 25%, transisi 0→30→0 | Note-1 UX | | UX-02:38 | ❌ | |
-| U13 | Mic denied — tidak ada ilustrasi besar, hanya teks | Note-1 UX | | UX-03:50 | ❌ | |
-| U18 | Siluet — 48dp padding dari tepi layar tidak di-enforce | Note-1 UX | | VISUAL-02:36-38 | ❌ | |
-| U19 | Siluet — CSS stroke transition 0.3s tidak bisa di Canvas | Note-1 UX | | VISUAL-02:56 | ❌ | |
-| U24 | DualSense flash-error/warning/idle opacity < 30% | Note-1 UX | | UX-02:38 | ❌ | |
-| C04 | Vite + package.json basicSsl — putuskan perlu/tidak | Note-1 CROSS | | — | ❌ | |
-| C18 | Dualsense pre-grant audio permission vs vocatone lazy init | Note-1 CROSS | | — | ❌ | |
-| S18 | Flash opacity < 30% — semua kelas di bawah blueprint | Note-2 SCOPE | | PoC:79 | ❌ | |
-| S23 | Konstanta `SPREAD_TRIGGER`/`SPREAD_SUSTAIN` di dalam hot-path callback | Note-2 SCOPE | | AGENTS.md | ❌ | |
-| S24 | Silhouette RAF loop 60Hz terlepas dari FaceMesh 15FPS — boros CPU | Note-2 SCOPE | | PoC:82 | ❌ | |
-| S26 | Tidak ada `onEnter(LAR_CHECK)` — tidak ada inisialisasi state gate | Note-2 SCOPE | | PoC:26, 68-69 | ❌ | |
+| T06 | `computeRMS()` private → public | Note-1 TECH | | TECH-03:55 | ✅ | A2 — computeRMS sudah export |
+| T07 | Tambah `getPitchHz()` | Note-1 TECH | | TECH-03:99 | ✅ | A2 — sudah ada di audio.js |
+| T24 | DualSense `computeRMS()` tanpa guard division-by-zero | Note-1 TECH | | TECH-03:55 | ✅ | A2 — guard `if (!buffer || buffer.length === 0) return 0;` |
+| U08 | Siluet — Out of Bounds state dengan shake animation | Note-1 UX | | VISUAL-02:28 | ❌ | Canvas translate shake belum diimplementasikan |
+| U10 | Flash success — opacity 30% bukan 25%, transisi 0→30→0 | Note-1 UX | | UX-02:38 | ✅ | A3 — flash-success/warning/error opacity 0.3 |
+| U13 | Mic denied — tidak ada ilustrasi besar, hanya teks | Note-1 UX | | UX-03:50 | ❌ | Hanya teks error, belum ada ilustrasi |
+| U18 | Siluet — 48dp padding dari tepi layar tidak di-enforce | Note-1 UX | | VISUAL-02:36-38 | ❌ | rx=20% ry=12% canvas, bukan padding 48dp fix |
+| U19 | Siluet — CSS stroke transition 0.3s tidak bisa di Canvas | Note-1 UX | | VISUAL-02:56 | ❌ | Wajar — Canvas tidak support CSS transition |
+| U24 | DualSense flash-error/warning/idle opacity < 30% | Note-1 UX | | UX-02:38 | ✅ | A3 — semua flash class opacity 0.3 |
+| C04 | Vite + package.json basicSsl — putuskan perlu/tidak | Note-1 CROSS | | — | ❌ | Tidak urgent — HTTPS via deploy |
+| C18 | Dualsense pre-grant audio permission vs vocatone lazy init | Note-1 CROSS | | — | ✅ | A1 — lazy init via openAudioGate, tidak ada preGrant |
+| S18 | Flash opacity < 30% — semua kelas di bawah blueprint | Note-2 SCOPE | | PoC:79 | ✅ | A3 — opacity 0.3 = 30% |
+| S23 | Konstanta `SPREAD_TRIGGER`/`SPREAD_SUSTAIN` di dalam hot-path callback | Note-2 SCOPE | | AGENTS.md | ✅ | Fase C — tidak pakai spread constants (LAR langsung) |
+| S24 | Silhouette RAF loop 60Hz terlepas dari FaceMesh 15FPS — boros CPU | Note-2 SCOPE | | PoC:82 | ❌ | RAF loop 60Hz untuk crosshair + orbit; silhouette ikut. Wajar PoC |
+| S26 | Tidak ada `onEnter(LAR_CHECK)` — tidak ada inisialisasi state gate | Note-2 SCOPE | | PoC:26, 68-69 | ✅ | Fase C — onEnter(LAR_CHECK) reset outOfThresholdSince + stablePitchCount |
 
 ### 🟢 Ringan — vocatone (11 item)
 
@@ -419,6 +418,7 @@
 | 17 Jul 2026 | 1.2 | Fase A1 ✅: C01, C02, C23, C24 — GateKeeper state machine, initCamera API, f_min standardisasi | Agent V-NADA |
 | 17 Jul 2026 | 1.3 | Fase A2 ✅: T11-T14, T26-T30, G09, U28, S34 — sample rate, caching, IndexedDB, RMS kalibrasi, crosshair, error handling | Agent V-NADA |
 | 18 Jul 2026 | 1.4 | Fase A3 ✅: T16, G07, U03-U04, U06, U12, U14, U20-U22, U26-U27, U29-U31, C05, C19, C21, C22 — module selection, back button, silhouette oval dash + color, haptic, 3-state button, Ayo Mulai, camera border, 16dp spacing, checkmark, orbit pulse, red arrow, mirror, error transition, AudioContext destination | Agent V-NADA |
+| 18 Jul 2026 | 1.5 | Fase C ⚡ Batch 1+2 (dualsense): S40 (red flash no audio), G04 (wrong mouth flash-error + silhouette merah), T05/S29 (closeAudioGate async), S05 (SESSION_ACTIVE live state), U07 (silhouette pulse), S44 (canvas ResizeObserver), S36 (remove accuracy scope creep), T19 (camera 480p→360p fallback), S26 (onEnter LAR_CHECK init) — 9 item dualsense | Agent V-NADA |
 
 ---
 

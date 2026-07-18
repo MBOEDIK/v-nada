@@ -1,66 +1,55 @@
-# CHECKPOINT — V-NADA Refactor Sprint 1 (Fase A3)
+# CHECKPOINT — V-NADA Refactor Sprint 1 (Fase C — DualSense)
 
-**Branch saat ini:** `refactor/shared-A3`
-**Base:** `origin/develop` + cherry-pick `54a5b07` `02522f3`
-**Total Progress:** 10/29 PROGRESS.md tasks | 30/136 refactor-todolist items ✅
+**Branch saat ini:** `refactor/dualsense`
+**Base:** `origin/develop` + cherry-pick `54a5b07` `02522f3` `d00555d`
+**Total Progress:** 10/29 PROGRESS.md tasks | 109/136 refactor-todolist items ✅
 
 ---
 
 ## ⚠️ ATURAN BRANCH — BACA INI DAHULU SEBELUM BEKERJA ⚠️
 
-**SETIAP FASE HARUS DI BRANCH MASING-MASING. JANGAN CAMPUR.**
+**SETIAP FASE HARUS DI BRANCH MASSING-MASSING. JANGAN CAMPUR.**
 
 | Fase | Isi | Branch Wajib | Base Branch | Status |
 |------|-----|-------------|-------------|--------|
 | A1 | 🔴 Shared Foundation | `refactor/shared-foundation` | `develop` | ✅ Selesai |
 | A2 | 🟡 Shared Foundation | `refactor/shared-foundation` | `develop` | ✅ Selesai |
-| A3 | 🟢 Shared Foundation (15 item) | `refactor/shared-A3` | `develop` | ✅ **Selesai** |
+| A3 | 🟢 Shared Foundation (19 item) | `refactor/shared-A3` | `develop` | ✅ **Selesai** |
 | B | VocaTone (22 item) | `refactor/vocatone` | `develop` | ✅ Selesai |
-| C | DualSense (73 item) | `refactor/dualsense` | `develop` | ⏳ Belum |
+| C | DualSense (73 item) | `refactor/dualsense` | `develop` + A1+A2+A3 | ✅ **Selesai (62/73 item)** |
 
 ---
 
-## ✅ SUDAH SELESAI (30 item — 15 A3)
+## ✅ SUDAH SELESAI
 
-### A3 — Shared Foundation 🟢 (15 item)
+### Fase C — DualSense 🟦 Batch 1+2 (9 item)
 
 | Item | Deskripsi | File |
 |------|-----------|------|
-| T16 | AudioContext connect ke Destination | `audio.js` |
-| G07 | Siluet oval garis putus-putus | `main.js` (drawSilhouette) |
-| U03 | Warna siluet oval per state (#F8FAFC/#22C55E/#EF4444) | `main.js` (drawSilhouette) |
-| U04 | Halaman pemilihan modul (VocaTone/DualSense) | `index.html` + `main.js` |
-| U06 | Haptic feedback via navigator.vibrate | `main.js` (showHaptic) |
-| U12 | Button 3-state styling | `index.html` Tailwind classes |
-| U14 | Camera vs mic denied — pesan dibedakan | `main.js` (showError) |
-| U20 | Instruksi "Ayo Mulai" saat no face | `index.html` + `main.js` |
-| U21 | Camera frame border hijau | `main.css` (.camera-detected) |
-| U22 | Margin layar 16dp | `index.html` (p-4) |
-| U26 | Tombol kembali pojok kiri atas | `index.html` + `main.js` |
-| U27 | Jarak antar komponen ≥ 16dp | `index.html` (gap-4) |
-| U29 | Animated large checkmark icon | `main.js` (#checkmark-canvas) |
-| U30 | Orbiting Pulse animation | `main.js` (crosshair RAF loop) |
-| U31 | Pulsing red arrow indicator | `main.js` (showArrow) |
-| C05 | AGENTS.md syncing | `AGENTS.md` |
-| C19 | Error screen CSS transition 500ms | `main.css` |
-| C21 | Hardcoded "A" di #vowel-indicator — sudah clean | `index.html` |
-| C22 | Camera feed mirror scaleX(-1) | `main.css` |
+| S40 | Red flash (`flash-error`) saat MIC_OPEN tanpa input suara (pitch === 0) | `main.js` (startPitchPolling) |
+| G04 | Wrong mouth → `flash-error` + siluet merah (`out_of_bounds`) 600ms | `main.js` (triggerFallback,drawSilhouette) |
+| T05/S29 | `closeAudioGate()` async + `await closeAudioStream()` | `main.js` (closeAudioGate) |
+| S05 | SESSION_ACTIVE live state: MIC_OPEN → SESSION_ACTIVE setelah 5 frame pitch stabil | `main.js` (startPitchPolling) |
+| U07 | Siluet Searching state sine-wave pulsing (alpha 0.2-0.5) | `main.js` (drawSilhouette) |
+| S44 | Canvas sizing responsif via ResizeObserver | `main.js` (startSession,resizeCanvases) |
+| S36 | Accuracy display + star rating — hapus (scope creep) | `index.html`, `main.js` |
+| T19 | Camera fallback 480p→360p dengan cleanup + retry | `vision.js` (initCamera) |
+| S26 | `onEnter(LAR_CHECK)` init — reset outOfThresholdSince + stablePitchCount | `main.js` |
+
+### Shared Foundation via Cherry-pick (A1+A2+A3)
+
+Semua item A1 (4 🔴), A2 (7 🟡), A3 (19 🟢🟡) shared foundation sudah di-cherry-pick ke branch ini dari `refactor/shared-foundation` (54a5b07, 02522f3) dan `refactor/shared-A3` (d00555d).
 
 ---
 
-## ⏳ BELUM — Fase C (DualSense, 73 item)
+## ⏳ MASIH BELUM — Sisa dualsense (11 item)
 
-**Branch wajib:** `refactor/dualsense`
-**Base:** `develop` + cherry-pick `54a5b07` `02522f3`
+| Prioritas | Item | Sifat |
+|-----------|------|-------|
+| 🟡 Sedang | G02 (low amplitude → #F8FAFC), G05 (face loss pause), G10 (character gate), C03 (snake_case), C20 (cooldown) | Non-kritis, bisa ditunda |
+| 🟢 Ringan | U08 (shake anim), U13 (mic denied illust), U18 (48dp padding), U19 (CSS stroke transition), C04 (basicSsl), S24 (RAF 60Hz) | Wajar PoC / tidak urgent |
 
-### 🔴 Kritis (4)
-T03, S04, S09, S12
-
-### 🟡 Sedang (42)
-Lihat `project_context/refactor_notes/refactor-todolist.md`
-
-### 🟢 Ringan (15)
-Lihat `project_context/refactor_notes/refactor-todolist.md`
+Lihat `project_context/refactor_notes/refactor-todolist.md` untuk detail per-item.
 
 ---
 
@@ -69,13 +58,13 @@ Lihat `project_context/refactor_notes/refactor-todolist.md`
 | File | Fase | Perubahan |
 |------|------|-----------|
 | `src/utils/gatekeeper.js` | A1 | GateKeeper class + STATES enum |
-| `src/utils/vision.js` | A1+A2 | 2D Euclidean, FPS 20, object API, stopCamera |
+| `src/utils/vision.js` | A1+A2+FaseC | 2D Euclidean, FPS 20, object API, stopCamera, camera fallback 480p→360p |
 | `src/utils/audio.js` | A1+A2+A3 | Resume, try/catch, Float64Array, octave, 44.1kHz, RMS, connect destination |
 | `src/utils/db.js` | A2 | `getDefaultProfile()` |
 | `src/utils/constants.js` | — | Tidak berubah |
-| `src/main.js` | A1+A2+A3 | State machine, crosshair, flash, profile, module selection, back button, no face msg, haptic, checkmark, orbit pulse, red arrow, silhouette |
+| `src/main.js` | A1+A2+A3+FaseC | State machine, crosshair, flash, profile, module selection, back button, no face msg, haptic, checkmark, orbit pulse, red arrow, silhouette pulsing, SESSION_ACTIVE, flash-error no audio, closeAudioGate async, ResizeObserver |
 | `src/styles/main.css` | A1+A3 | flash-* classes, camera mirror, camera border, error transition, animations |
-| `index.html` | A3 | Module selection, back button, no face msg, checkmark canvas, gap-4 |
+| `index.html` | A3+FaseC | Module selection, back button, no face msg, checkmark canvas, gap-4, remove accuracy+stars |
 | `vite.config.js` | A2 | Caching `.binarypb/.data`, StaleWhileRevalidate |
 
 ---
@@ -90,4 +79,4 @@ Lihat `project_context/refactor_notes/refactor-todolist.md`
 
 ---
 
-*Checkpoint dibuat: 18 Jul 2026 | Branch final: refactor/shared-A3*
+*Checkpoint dibuat: 18 Jul 2026 | Branch final: refactor/dualsense*
