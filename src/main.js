@@ -119,25 +119,25 @@ function drawSilhouette(state) {
   let lineWidth;
   let alpha;
   switch (state) {
-    case 'searching':
-      color = '#F8FAFC';
-      lineWidth = 2;
-      alpha = 0.2 + Math.sin(silhouette_pulse) * 0.15;
-      break;
-    case 'locked':
-      color = '#22C55E';
-      lineWidth = 3;
-      alpha = 0.3;
-      break;
-    case 'out_of_bounds':
-      color = '#EF4444';
-      lineWidth = 2;
-      alpha = 0.3 + Math.sin(silhouette_pulse * 2) * 0.15;
-      break;
-    default:
-      color = '#F8FAFC';
-      lineWidth = 2;
-      alpha = 0.3;
+  case 'searching':
+    color = '#F8FAFC';
+    lineWidth = 2;
+    alpha = 0.2 + Math.sin(silhouette_pulse) * 0.15;
+    break;
+  case 'locked':
+    color = '#22C55E';
+    lineWidth = 3;
+    alpha = 0.3;
+    break;
+  case 'out_of_bounds':
+    color = '#EF4444';
+    lineWidth = 2;
+    alpha = 0.3 + Math.sin(silhouette_pulse * 2) * 0.15;
+    break;
+  default:
+    color = '#F8FAFC';
+    lineWidth = 2;
+    alpha = 0.3;
   }
 
   canvas_ctx.save();

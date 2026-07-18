@@ -82,7 +82,7 @@ export function initCamera({ videoElement, onFace, onNoFace } = {}) {
     { width: 480, height: 480 },
     { width: 360, height: 360 },
   ];
-  let currentResIndex = 0;
+  const currentResIndex = 0;
   let currentCamera = null;
 
   async function tryStart(resIndex) {
@@ -145,4 +145,4 @@ export function stopCamera() {
   onNoFaceCallback = null;
 }
 
-export { FACEMESH_LIPS };
+export { FACEMESH_LIPS, throttleFrame };

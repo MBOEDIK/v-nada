@@ -2,6 +2,17 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  test: {
+    include: ['src/**/*.test.js'],
+    environment: 'jsdom',
+    setupFiles: ['src/__tests__/setup.js'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/utils/**'],
+      exclude: ['src/__tests__/**'],
+    },
+  },
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
