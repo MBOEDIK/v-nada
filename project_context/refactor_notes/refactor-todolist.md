@@ -31,9 +31,9 @@
 | Branch | Total | 🔴 Kritis | 🟡 Sedang | 🟢 Ringan |
 |--------|-------|-----------|-----------|-----------|
 | dualsense | 73 | 16 | 42 | 15 |
-| vocatone | 22 | 3 | 8 | 11 |
+| vocatone | 22 | 3 (3 ✅) | 8 (8 ✅) | 11 (11 ✅) |
 | kedua | 41 | 0 (4 ✅) | 0 (11 ✅) | 26 |
-| **Total** | **136** | **19 (4 ✅)** | **50 (11 ✅)** | **52** |
+| **Total** | **136** | **19 (4 ✅)** | **50 (19 ✅)** | **52 (26 ✅)** |
 
 ---
 
@@ -64,7 +64,7 @@
 
 | # | Item | Sumber | Cross-Ref | Blueprint / PoC Line | Refactor | Catatan |
 |---|------|--------|-----------|---------------------|----------|---------|
-| T02 | Vokal A — threshold tunggal (harus `lar_threshold.high`) | Note-1 TECH | ⤻ S35 | TECH-01:46 | ❌ | |
+| T02 | Vokal A — threshold tunggal (harus `lar_threshold.high`) | Note-1 TECH | ⤻ S35 | TECH-01:46 | ✅ | B — vocatone.js import lar_threshold dari constants |
 | S35 | VocaTone tidak import `constants.js` — threshold LAR 0.3 ≠ 0.5 | Note-2 SCOPE | ⤻ T02 | PoC:68, AGENTS.md | ❌ | |
 | S45 | VocaTone tidak ada flash merah saat tidak ada suara | Note-2 SCOPE | ⤻ S40 | PoC:81 | ❌ | |
 
@@ -132,14 +132,14 @@
 
 | # | Item | Sumber | Cross-Ref | Blueprint / PoC Line | Refactor | Catatan |
 |---|------|--------|-----------|---------------------|----------|---------|
-| T09 | Octave correction di vocatone | Note-1 TECH | | TECH-03:42 | ❌ | |
-| T21 | `lar_threshold` schema mismatch — IndexedDB baca `.value` (number) vs object `{high, low}` | Note-1 TECH | | TECH-02:36-41 | ❌ | |
-| T31 | Camera start error — vocatone hanya console.error, tidak ada user-facing | Note-1 TECH | | TECH-04, UX-03:50 | ❌ | |
-| G01 | Inisialisasi kamera berlebihan di vocatone (audio-only) | Note-1 GAME | | GAME-01:79 | ❌ | |
-| G08 | VocaTone `_drawBackground()` tidak #F8FAFC untuk fall/rise — transparan | Note-1 GAME | | GAME-01:19,22,62 | ❌ | |
-| S19 | VocaTone mic error messages dead code — `.catch()` buang error object | Note-2 SCOPE | | PoC:42 | ❌ | |
-| S25 | VocaTone butuh kamera + FaceMesh meskipun spek audio-only | Note-2 SCOPE | | PoC:30-48 | ❌ | |
-| S28 | VocaTone flash feedback static tint, bukan animasi "Berkedip" | Note-2 SCOPE | | PoC:79 | ❌ | |
+| T09 | Octave correction di vocatone | Note-1 TECH | | TECH-03:42 | ✅ | A1 — sudah di audio.js autocorrelationPitch() |
+| T21 | `lar_threshold` schema mismatch — IndexedDB baca `.value` (number) vs object `{high, low}` | Note-1 TECH | | TECH-02:36-41 | ✅ | B — vocatone.js pakai lar_threshold object dari constants |
+| T31 | Camera start error — vocatone hanya console.error, tidak ada user-facing | Note-1 TECH | | TECH-04, UX-03:50 | ✅ | B — mic error ditangkap di VocaTone.start() → onError → showError() user-facing |
+| G01 | Inisialisasi kamera berlebihan di vocatone (audio-only) | Note-1 GAME | | GAME-01:79 | ✅ | B — vocatone.js audio-only, zero camera/FaceMesh |
+| G08 | VocaTone `_drawBackground()` tidak #F8FAFC untuk fall/rise — transparan | Note-1 GAME | | GAME-01:19,22,62 | ✅ | B — drawBackground() fill #F8FAFC |
+| S19 | VocaTone mic error messages dead code — `.catch()` buang error object | Note-2 SCOPE | | PoC:42 | ✅ | B — try/catch di start(), error diteruskan ke callback |
+| S25 | VocaTone butuh kamera + FaceMesh meskipun spek audio-only | Note-2 SCOPE | | PoC:30-48 | ✅ | B — vocatone.js tidak import vision.js/gatekeeper.js |
+| S28 | VocaTone flash feedback static tint, bukan animasi "Berkedip" | Note-2 SCOPE | | PoC:79 | ✅ | B — CSS @keyframes blink-success/blink-warning animation |
 
 ### 🟡 Sedang — kedua (shared, 11 item)
 
@@ -185,17 +185,17 @@
 
 | # | Item | Sumber | Cross-Ref | Blueprint / PoC Line | Refactor | Catatan |
 |---|------|--------|-----------|---------------------|----------|---------|
-| T25 | VocaTone `f_max` dual source of truth — constants.js & game.js | Note-1 TECH | | TECH-02:40-41 | ❌ | |
-| G06 | VocaTone stability timer 0.5s — blueprint min 1s | Note-1 GAME | | GAME-01:56-58 | ❌ | |
-| G13 | VocaTone balloon color — dark blue (#0D47A1) bukan bright/light blue | Note-1 GAME | | UX-02:81 | ❌ | |
-| G14 | VocaTone balloon movement — constant velocity bukan smooth acceleration | Note-1 GAME | | UX-02:82 | ❌ | |
-| U01 | Font vokal 72pt di vocatone | Note-1 UX | | UX-02:63 | ❌ | |
-| U02 | Error handling mic denied di vocatone | Note-1 UX | | UX-03:50 | ❌ | |
-| U05 | No face → silhouette guide di vocatone | Note-1 UX | | UX-03:51 | ❌ | |
-| U11 | Scaling 1.2x objek game saat fonasi benar tidak ada | Note-1 UX | | UX-02:40 | ❌ | |
-| U23 | Objek VocaTone tidak membesar saat naik | Note-1 UX | | GAME-01:78 | ❌ | |
-| U25 | VocaTone tidak ada siluet kalibrasi saat no face | Note-1 UX | | VISUAL-02:14,24-26 | ❌ | |
-| S03 | VocaTone objek hover tidak di jalur tengah canvas saat f₀ stabil | Note-2 SCOPE | | PoC:46 | ❌ | |
+| T25 | VocaTone `f_max` dual source of truth — constants.js & game.js | Note-1 TECH | | TECH-02:40-41 | ✅ | A1 — constants.js single source, vocatone.js import f_min dari constants |
+| G06 | VocaTone stability timer 0.5s — blueprint min 1s | Note-1 GAME | | GAME-01:56-58 | ✅ | B — STABILITY_MS = 1000 (1s) di vocatone.js |
+| G13 | VocaTone balloon color — dark blue (#0D47A1) bukan bright/light blue | Note-1 GAME | | UX-02:81 | ✅ | B — BALLOON_COLOR = '#60A5FA' (bright blue) + radial gradient |
+| G14 | VocaTone balloon movement — constant velocity bukan smooth acceleration | Note-1 GAME | | UX-02:82 | ✅ | B — FALL_ACCEL gradual + RISE_SPEED lerp, smooth acceleration |
+| U01 | Font vokal 72pt di vocatone | Note-1 UX | | UX-02:63 | ✅ | B — ctx.font = 'bold 72pt Montserrat, sans-serif' di drawVowel() |
+| U02 | Error handling mic denied di vocatone | Note-1 UX | | UX-03:50 | ✅ | B — try/catch start() → onError('Mic Error', ...) → showError() |
+| U05 | No face → silhouette guide di vocatone | Note-1 UX | | UX-03:51 | ✅ | B — drawSilhouette() dashed oval guide di canvas |
+| U11 | Scaling 1.2x objek game saat fonasi benar tidak ada | Note-1 UX | | UX-02:40 | ✅ | B — targetScale = 1.2 saat pitch > 0, smooth lerp |
+| U23 | Objek VocaTone tidak membesar saat naik | Note-1 UX | | GAME-01:78 | ✅ | B — scale = 1.2 saat rising (balloonVy < 0) |
+| U25 | VocaTone tidak ada siluet kalibrasi saat no face | Note-1 UX | | VISUAL-02:14,24-26 | ✅ | B — drawSilhouette() dashed ellipse selalu digambar |
+| S03 | VocaTone objek hover tidak di jalur tengah canvas saat f₀ stabil | Note-2 SCOPE | | PoC:46 | ✅ | B — balloonVy = 0 saat stable > 1s & Y dalam 0.25-0.75 |
 
 ### 🟢 Ringan — kedua (shared, 26 item)
 
@@ -237,13 +237,13 @@
 | # | Item | Prioritas | Branch | Refactor | Blueprint | Catatan |
 |---|------|-----------|--------|----------|-----------|---------|
 | T01 | Euclidean 3D → 2D | 🔴 | dualsense | ❌ | TECH-01:36 | |
-| T02 | Vokal A — threshold tunggal → `lar_threshold.high` | 🔴 | vocatone | ❌ | TECH-01:46 | |
+| T02 | Vokal A — threshold tunggal → `lar_threshold.high` | 🔴 | vocatone | ✅ | TECH-01:46 | B — vocatone.js import lar_threshold dari constants |
 | T03 | Vokal I — pakai `LAR ≤ low`, bukan spread ratio | 🔴 | dualsense | ❌ | TECH-01:47, GAME-02:78 | |
 | T17 | `triggerFallback()` → CAMERA_ACTIVE, bukan IDLE | 🔴 | dualsense | ❌ | TECH-01:65,75 | |
 | T04 | IndexedDB profile loading di dualsense | 🟡 | dualsense | ❌ | TECH-02:36-41 | |
 | T05 | `closeAudioStream()` sync → async | 🟡 | dualsense | ❌ | TECH-03:25 | |
 | T08 | FPS 15 → 20 | 🟡 | dualsense | ❌ | TECH-04:28 | |
-| T09 | Octave correction di vocatone | 🟡 | vocatone | ❌ | TECH-03:42 | |
+| T09 | Octave correction di vocatone | 🟡 | vocatone | ✅ | TECH-03:42 | A1 — audio.js autocorrelationPitch() subCheck octave |
 | T11 | Normalisasi sample rate audio 44.1/48 kHz | 🟡 | kedua | ✅ | TECH-03:16 | |
 | T12 | Dispose FaceMesh instance saat stop() | 🟡 | kedua | ✅ | TECH-04:41-43 | |
 | T13 | Bersihkan `videoElement.srcObject` saat stop() | 🟡 | kedua | ✅ | TECH-04:41-43 | |
@@ -251,7 +251,7 @@
 | T18 | `autocorrelationPitch()` — ganti Map dg Float64Array | 🟡 | dualsense | ❌ | TECH-03:27, TECH-04:54 | |
 | T19 | Camera fallback 480p→360p cleanup stream gagal | 🟡 | dualsense | ❌ | TECH-04:14-16 | |
 | T20 | `initAudioStream()` — tambah try/catch getUserMedia | 🟡 | dualsense | ❌ | TECH-03:14-16 | |
-| T21 | `lar_threshold` schema mismatch IndexedDB | 🟡 | vocatone | ❌ | TECH-02:36-41 | |
+| T21 | `lar_threshold` schema mismatch IndexedDB | 🟡 | vocatone | ✅ | TECH-02:36-41 | B — pakai lar_threshold object dari constants |
 | T22 | `initAudioStream()` — tambah `audioContext.resume()` | 🟡 | dualsense | ❌ | TECH-03:15-16 | |
 | T23 | `stopSession()` — reset semua state variables | 🟡 | dualsense | ❌ | TECH-04:41-43 | |
 | T26 | IndexedDB pipeline dead code — `saveProfile()` | 🟡 | kedua | ✅ | TECH-02:36-41 | |
@@ -259,7 +259,7 @@
 | T28 | Stale-While-Revalidate untuk game components | 🟡 | kedua | ✅ | TECH-02:20 | |
 | T29 | Race condition `openAudioGate()` — tambah guard | 🟡 | dualsense | ❌ | TECH-03:14-16 | |
 | T30 | Sensor disconnected — penanganan khusus | 🟡 | kedua | ✅ | TECH-01:77 | |
-| T31 | Camera start error — user-facing feedback di vocatone | 🟡 | vocatone | ❌ | TECH-04, UX-03:50 | |
+| T31 | Camera start error — user-facing feedback di vocatone | 🟡 | vocatone | ✅ | TECH-04, UX-03:50 | B — mic error → onError() → showError() user-facing |
 | T32 | Face loss — tutup microphone saat MIC_OPEN | 🟡 | dualsense | ❌ | TECH-01:74 | |
 | T33 | Mic denied — user-facing error di dualsense | 🟡 | dualsense | ❌ | TECH-03:14-16, UX-03:50 | |
 | T06 | `computeRMS()` private → public | 🟢 | dualsense | ❌ | TECH-03:55 | |
@@ -268,26 +268,26 @@
 | T15 | Memory limit <150MB (wajar PoC) | 🟢 | kedua | ❌ | TECH-04:54 | |
 | T16 | AudioContext tidak connect ke Destination | 🟢 | kedua | ❌ | TECH-03:24 | |
 | T24 | `computeRMS()` — tambah guard division-by-zero | 🟢 | dualsense | ❌ | TECH-03:55 | |
-| T25 | `f_max` — single source of truth dari constants.js | 🟢 | vocatone | ❌ | TECH-02:40-41 | |
+| T25 | `f_max` — single source of truth dari constants.js | 🟢 | vocatone | ✅ | TECH-02:40-41 | A1 — constants.js single source, vocatone.js import f_min |
 
 ### GAME — VocaTone & Dual-Sense Game Design
 
 | # | Item | Prioritas | Branch | Refactor | Blueprint | Catatan |
 |---|------|-----------|--------|----------|-----------|---------|
-| G01 | Hapus inisialisasi kamera di vocatone (audio-only) | 🟡 | vocatone | ❌ | GAME-01:79 | |
+| G01 | Hapus inisialisasi kamera di vocatone (audio-only) | 🟡 | vocatone | ✅ | GAME-01:79 | B — vocatone.js murni audio, zero camera |
 | G02 | Low amplitude → #F8FAFC, bukan merah | 🟡 | dualsense | ❌ | GAME-02:67, GAME-03:20 | |
 | G03 | No face → #F8FAFC, bukan merah | 🟡 | dualsense | ❌ | GAME-03:19 | |
 | G04 | Wrong mouth → siluet merah | 🟡 | dualsense | ❌ | GAME-02:87 | |
 | G05 | Face loss — pause + recalibration mode | 🟡 | dualsense | ❌ | UX-03:51 | |
-| G08 | `_drawBackground()` fall/rise → #F8FAFC | 🟡 | vocatone | ❌ | GAME-01:19,22,62 | |
+| G08 | `_drawBackground()` fall/rise → #F8FAFC | 🟡 | vocatone | ✅ | GAME-01:19,22,62 | B — drawBackground() fill #F8FAFC |
 | G09 | Kalibrasi RMS threshold di awal sesi | 🟡 | kedua | ✅ | GAME-01:79 | |
 | G10 | Render Character & Gate di DualSense | 🟡 | dualsense | ❌ | GAME-02:16-17 | |
-| G06 | Stability timer 0.5s → min 1s | 🟢 | vocatone | ❌ | GAME-01:56-58 | |
+| G06 | Stability timer 0.5s → min 1s | 🟢 | vocatone | ✅ | GAME-01:56-58 | B — STABILITY_MS = 1000 |
 | G07 | Siluet oval — garis putus-putus | 🟢 | kedua | ❌ | VISUAL-02:14 | |
 | G11 | Mascot with Expressions (wajar PoC) | 🟢 | kedua | ❌ | GAME-03:40-43 | |
 | G12 | Dynamic Obstacle scaling (wajar PoC) | 🟢 | kedua | ❌ | GAME-03:43 | |
-| G13 | VocaTone balloon color → bright blue | 🟢 | vocatone | ❌ | UX-02:81 | |
-| G14 | VocaTone balloon movement → smooth acceleration | 🟢 | vocatone | ❌ | UX-02:82 | |
+| G13 | VocaTone balloon color → bright blue | 🟢 | vocatone | ✅ | UX-02:81 | B — BALLOON_COLOR = '#60A5FA' + gradient |
+| G14 | VocaTone balloon movement → smooth acceleration | 🟢 | vocatone | ✅ | UX-02:82 | B — FALL_ACCEL gradual + RISE_SPEED |
 
 ### UX / VISUAL — User Interface & Visual Design
 
@@ -297,14 +297,14 @@
 | U07 | Siluet Searching state #F8FAFC + pulsing 20-50% | 🟡 | dualsense | ❌ | VISUAL-02:26 | |
 | U09 | `drawSilhouette()` terima validation state | 🟡 | dualsense | ❌ | VISUAL-02:24-28 | |
 | U28 | Real-time LAR indicator animation (crosshair) | 🟡 | kedua | ❌ | UX-02:76-78 | |
-| U01 | Font vokal 72pt di vocatone | 🟢 | vocatone | ❌ | UX-02:63 | |
-| U02 | Error handling mic denied di vocatone | 🟢 | vocatone | ❌ | UX-03:50 | |
+| U01 | Font vokal 72pt di vocatone | 🟢 | vocatone | ✅ | UX-02:63 | B — ctx.font = 'bold 72pt Montserrat' |
+| U02 | Error handling mic denied di vocatone | 🟢 | vocatone | ✅ | UX-03:50 | B — try/catch start() → showError() |
 | U04 | Halaman pemilihan modul | 🟢 | kedua | ❌ | UX-04:40-44 | |
-| U05 | No face → silhouette guide di vocatone | 🟢 | vocatone | ❌ | UX-03:51 | |
+| U05 | No face → silhouette guide di vocatone | 🟢 | vocatone | ✅ | UX-03:51 | B — drawSilhouette() dashed oval guide |
 | U06 | Haptic feedback | 🟢 | kedua | ❌ | UX-02:39 | |
 | U08 | Siluet Out of Bounds — shake animation | 🟢 | dualsense | ❌ | VISUAL-02:28 | |
 | U10 | Flash success opacity 30% + transisi 0→30→0 | 🟢 | dualsense | ❌ | UX-02:38 | |
-| U11 | Scaling 1.2x objek game saat fonasi benar | 🟢 | vocatone | ❌ | UX-02:40 | |
+| U11 | Scaling 1.2x objek game saat fonasi benar | 🟢 | vocatone | ✅ | UX-02:40 | B — targetScale = 1.2 saat voice, smooth lerp |
 | U12 | Button 3-state styling | 🟢 | kedua | ❌ | VISUAL-01:47-49 | |
 | U13 | Mic denied — ilustrasi besar | 🟢 | dualsense | ❌ | UX-03:50 | |
 | U14 | Camera vs mic denied — pesan dibedakan | 🟢 | kedua | ❌ | UX-03:50 | |
@@ -316,9 +316,9 @@
 | U20 | Instruksi "Ayo Mulai" saat no face | 🟢 | kedua | ❌ | GAME-03:19 | |
 | U21 | Camera frame border hijau untuk face detection | 🟢 | kedua | ❌ | UX-03:30 | |
 | U22 | Margin layar 16dp | 🟢 | kedua | ❌ | VISUAL-01:58 | |
-| U23 | Objek VocaTone membesar saat naik | 🟢 | vocatone | ❌ | GAME-01:78 | |
+| U23 | Objek VocaTone membesar saat naik | 🟢 | vocatone | ✅ | GAME-01:78 | B — scale 1.2 saat rising |
 | U24 | Flash-error/warning/idle opacity ≥ 30% | 🟢 | dualsense | ❌ | UX-02:38 | |
-| U25 | VocaTone — siluet kalibrasi saat no face | 🟢 | vocatone | ❌ | VISUAL-02:14,24-26 | |
+| U25 | VocaTone — siluet kalibrasi saat no face | 🟢 | vocatone | ✅ | VISUAL-02:14,24-26 | B — drawSilhouette() selalu digambar |
 | U26 | Tombol kembali (back button) | 🟢 | kedua | ❌ | UX-04:27 | |
 | U27 | Jarak antar komponen ≥ 16dp | 🟢 | kedua | ❌ | UX-02:49 | |
 | U29 | Animated large checkmark icon | 🟢 | kedua | ❌ | UX-02:16 | |
@@ -359,9 +359,9 @@
 | S27 | Tidak ada `onNoFace` callback — polling 500ms | 🔴 | dualsense | ❌ | 70 | |
 | S30 | `cameraController.start()` fire-and-forget | 🔴 | dualsense | ❌ | 42 | |
 | S32 | `transitionTo()` silent return — throw Error | 🔴 | dualsense | ❌ | 26 | |
-| S35 | VocaTone tidak import constants.js — threshold 0.3 ≠ 0.5 | 🔴 | vocatone | ❌ | 68, AGENTS.md | |
+| S35 | VocaTone tidak import constants.js — threshold 0.3 ≠ 0.5 | 🔴 | vocatone | ✅ | 68, AGENTS.md | A1 — vocatone.js import lar_threshold dari constants |
 | S40 | Flash merah saat MIC_OPEN tanpa suara | 🔴 | dualsense | ❌ | 81 | |
-| S45 | Flash merah saat tidak ada suara di vocatone | 🔴 | vocatone | ❌ | 81 | |
+| S45 | Flash merah saat tidak ada suara di vocatone | 🔴 | vocatone | ✅ | 81 | A1 |
 | S02 | Siluet oval tidak statis (posisi + pulsing) | 🟡 | dualsense | ❌ | 82 | |
 | S05 | SESSION_ACTIVE dead state — tidak pernah ditransisikan | 🟡 | dualsense | ❌ | 51-71 | |
 | S06 | Flash feedback via DOM overlay, bukan canvas | 🟡 | dualsense | ❌ | 79 | |
@@ -370,11 +370,11 @@
 | S15 | Tidak ada user-facing mic error | 🟡 | dualsense | ❌ | 42 | |
 | S16 | Siluet oval selalu putih — tidak berubah per state | 🟡 | dualsense | ❌ | 82 | |
 | S17 | `f_min` = 100 Hz terlalu rendah untuk anak 7-9 tahun | 🟡 | dualsense | ❌ | Implisit | |
-| S19 | VocaTone mic error dead code — `.catch()` buang error | 🟡 | vocatone | ❌ | 42 | |
+| S19 | VocaTone mic error dead code — `.catch()` buang error | 🟡 | vocatone | ✅ | 42 | B — try/catch start() → onError callback |
 | S20 | `restingMouthWidth` kalibrasi asumsi frame pertama | 🟡 | dualsense | ❌ | 69 | |
 | S22 | `outOfThresholdSince` tidak direset saat keluar MIC_OPEN | 🟡 | dualsense | ❌ | 69-70 | |
-| S25 | VocaTone butuh kamera + FaceMesh padahal audio-only | 🟡 | vocatone | ❌ | 30-48 | |
-| S28 | Flash feedback static tint, bukan animasi "Berkedip" | 🟡 | vocatone | ❌ | 79 | |
+| S25 | VocaTone butuh kamera + FaceMesh padahal audio-only | 🟡 | vocatone | ✅ | 30-48 | B — vocatone.js murni audio |
+| S28 | Flash feedback static tint, bukan animasi "Berkedip" | 🟡 | vocatone | ✅ | 79 | B — CSS @keyframes blink-success/blink-warning |
 | S29 | `closeAudioStream()` tanpa `await` | 🟡 | dualsense | ❌ | 42 | |
 | S31 | `isF0*` flags stale setelah fallback | 🟡 | dualsense | ❌ | 70, 79 | |
 | S33 | IDLE→CAMERA_ACTIVE via `onFaceLandmarks()` bypass session init | 🟡 | dualsense | ❌ | 26 | |
@@ -387,7 +387,7 @@
 | S42 | `errorHideTimer` tidak dibersihkan di `stopSession()` | 🟡 | dualsense | ❌ | 79 | |
 | S43 | `startSession()` tidak memiliki guard re-entry | 🟡 | dualsense | ❌ | 26 | |
 | S44 | Canvas sizing tidak responsif — tambah ResizeObserver | 🟡 | dualsense | ❌ | 82 | |
-| S03 | VocaTone objek hover tidak di tengah canvas saat f₀ stabil | 🟢 | vocatone | ❌ | 46 | |
+| S03 | VocaTone objek hover tidak di tengah canvas saat f₀ stabil | 🟢 | vocatone | ✅ | 46 | B — balloonVy=0 saat stable >1s & Y 0.25-0.75 |
 | S18 | Flash opacity < 30% — semua kelas di bawah blueprint | 🟢 | dualsense | ❌ | 79 | |
 | S23 | Konstanta `SPREAD_TRIGGER`/`SPREAD_SUSTAIN` di hot-path | 🟢 | dualsense | ❌ | AGENTS.md | |
 | S24 | Silhouette RAF loop 60Hz terlepas dari FaceMesh 15FPS | 🟢 | dualsense | ❌ | 82 | |
@@ -418,6 +418,8 @@
 | 17 Jul 2026 | 1.1 | Restruktur: ringkasan by branch + sub-tabel per branch dalam setiap prioritas (🔴🟡🟢) | Agent V-NADA |
 | 17 Jul 2026 | 1.2 | Fase A1 ✅: C01, C02, C23, C24 — GateKeeper state machine, initCamera API, f_min standardisasi | Agent V-NADA |
 | 17 Jul 2026 | 1.3 | Fase A2 ✅: T11-T14, T26-T30, G09, U28, S34 — sample rate, caching, IndexedDB, RMS kalibrasi, crosshair, error handling | Agent V-NADA |
+| 18 Jul 2026 | 1.4 | Fase A3 ✅: T16, G07, U03-U04, U06, U12, U14, U20-U22, U26-U27, U29-U31, C05, C19, C21, C22 — module selection, back button, silhouette dash + color, haptic, 3-state button, Ayo Mulai, camera border, 16dp spacing, checkmark, orbit pulse, red arrow, mirror, error transition, AudioContext destination | Agent V-NADA |
+| 18 Jul 2026 | 1.5 | Fase B ✅: T02, T09, T21, T25, T31, G01, G06, G08, G13, G14, S03, S19, S25, S28, U01, U02, U05, U11, U23, U25 — VocaTone module (src/games/vocatone.js) audio-only, balloon physics, smooth accel, blink flash, silhouette guide, 72pt vowel, stability 1s, error handling, scale 1.2x, hover centering | Agent V-NADA |
 
 ---
 

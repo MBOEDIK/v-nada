@@ -29,6 +29,31 @@
     background-color: rgba(239, 68, 68, 0.3) !important;
   }
   .flash-idle {
-    background-color: rgba(248, 250, 252, 0.15) !important;
+    background-color: rgba(248, 250, 252, 0.3) !important;
+  }
+}
+
+#error-screen {
+  transition: opacity 500ms ease-in-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes blink-success {
+    0%, 100% { background-color: transparent; }
+    25% { background-color: rgba(34, 197, 94, 0.3); }
+    50% { background-color: transparent; }
+    75% { background-color: rgba(34, 197, 94, 0.3); }
+  }
+  @keyframes blink-warning {
+    0%, 100% { background-color: transparent; }
+    25% { background-color: rgba(234, 179, 8, 0.3); }
+    50% { background-color: transparent; }
+    75% { background-color: rgba(234, 179, 8, 0.3); }
+  }
+  .flash-success {
+    animation: blink-success 600ms ease-in-out !important;
+  }
+  .flash-warning {
+    animation: blink-warning 600ms ease-in-out !important;
   }
 }

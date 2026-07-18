@@ -8,29 +8,28 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="/fonts/montserrat-latin.woff2" as="font" type="font/woff2" crossorigin />
-  <title>V-NADA</title>
+  <title>V-NADA — VocaTone</title>
 </head>
 <body class="font-body bg-bg-light">
   <div id="app" class="flex flex-col items-center justify-center min-h-screen p-4">
     <header class="w-full text-center mb-4">
-      <h1 class="font-heading text-2xl font-bold text-primary">V-NADA</h1>
-      <p class="text-sm text-gray-600">Visual Networked Audio & Digital Articulation</p>
+      <h1 class="font-heading text-2xl font-bold text-primary">VocaTone</h1>
+      <p class="text-sm text-gray-600">Latih Kontrol Pita Suara</p>
     </header>
 
     <main class="w-full max-w-lg flex flex-col gap-4">
-      <section id="camera-view" class="relative w-full aspect-square bg-gray-900 rounded-xl overflow-hidden">
-        <video id="camera-feed" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline></video>
-        <canvas id="overlay-canvas" class="absolute inset-0 w-full h-full"></canvas>
+      <section id="game-view" class="relative w-full aspect-square bg-gray-900 rounded-xl overflow-hidden">
+        <canvas id="game-canvas" class="absolute inset-0 w-full h-full"></canvas>
       </section>
 
-      <section id="feedback-panel" class="grid grid-cols-2 gap-3">
-        <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
-          <span class="text-xs font-semibold text-gray-500 uppercase">LAR</span>
-          <span id="lar-display" class="text-lg font-bold text-primary">0.00</span>
-        </div>
+      <section id="feedback-panel" class="grid grid-cols-2 gap-4">
         <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
           <span class="text-xs font-semibold text-gray-500 uppercase">Pitch (Hz)</span>
           <span id="pitch-display" class="text-lg font-bold text-primary">0</span>
+        </div>
+        <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
+          <span class="text-xs font-semibold text-gray-500 uppercase">Status</span>
+          <span id="status-display" class="text-lg font-bold text-muted">Idle</span>
         </div>
         <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
           <span class="text-xs font-semibold text-gray-500 uppercase">Accuracy</span>
@@ -43,19 +42,19 @@
       </section>
 
       <section id="controls" class="flex justify-center gap-4">
-        <button id="btn-start" class="px-8 py-4 bg-primary text-white font-heading font-bold text-lg rounded-full shadow-lg active:scale-95 transition-transform min-w-[60px] min-h-[60px]">
-          Start
+        <button id="btn-start" class="px-8 py-4 bg-primary text-white font-heading font-bold text-lg rounded-full shadow-lg min-w-[60px] min-h-[60px]">
+          Mulai
         </button>
-        <button id="btn-stop" class="px-8 py-4 bg-danger text-white font-heading font-bold text-lg rounded-full shadow-lg active:scale-95 transition-transform min-w-[60px] min-h-[60px]">
+        <button id="btn-stop" class="px-8 py-4 bg-danger text-white font-heading font-bold text-lg rounded-full shadow-lg min-w-[60px] min-h-[60px]">
           Stop
         </button>
       </section>
 
-      <section id="error-screen" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-danger bg-opacity-90 transition-opacity">
+      <section id="error-screen" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-danger bg-opacity-90 transition-opacity duration-500">
         <div class="text-center text-white p-8">
           <div class="text-6xl mb-4">&#9888;</div>
-          <h2 class="font-heading text-2xl font-bold mb-2">Mouth Closed</h2>
-          <p class="font-body text-lg">Please open your mouth to begin</p>
+          <h2 class="font-heading text-2xl font-bold mb-2">Error</h2>
+          <p class="font-body text-lg">Terjadi kesalahan</p>
         </div>
       </section>
     </main>
