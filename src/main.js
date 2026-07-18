@@ -4,6 +4,7 @@ import { initCamera, stopCamera, computeLipAspectRatio } from './utils/vision.js
 import { initAudioStream, closeAudioStream, extractPitch, calibrateAmbientNoise } from './utils/audio.js';
 import { getProfile, saveProfile, getDefaultProfile } from './utils/db.js';
 import { lar_threshold, f_max } from './utils/constants.js';
+import { VocaTone } from './games/vocatone.js';
 
 const $ = function (id) { return document.getElementById(id); };
 
@@ -24,6 +25,11 @@ const appHeader = $('app-header');
 const noFaceMsg = $('no-face-msg');
 const btnVocatone = $('btn-vocatone');
 const btnDualsense = $('btn-dualsense');
+const gameCanvas = $('game-canvas');
+const statusDisplay = $('status-display');
+
+let vocatoneGame = null;
+let vocatoneRunning = false;
 
 let audioInitialized = false;
 let audioInitializing = false;
@@ -423,8 +429,10 @@ function leaveModuleView() {
   moduleSelect.classList.remove('hidden');
   appHeader.classList.remove('hidden');
   cameraView.classList.add('hidden');
+  if (gameCanvas) { gameCanvas.parentElement.classList.add('hidden'); }
   btnBack.classList.add('hidden');
   stopSession();
+  stopVocaTone();
 }
 
 async function startSession() {
@@ -486,9 +494,84 @@ function stopSession() {
   checkmarkCanvas.classList.add('hidden');
 }
 
+function setCanvasFlash(type) {
+  if (gameCanvas) {
+    gameCanvas.classList.remove('flash-success', 'flash-warning', 'flash-error', 'flash-idle');
+    if (type) { gameCanvas.classList.add(type); }
+  }
+}
+
+function updateHUD() {
+  if (!vocatoneGame || !vocatoneGame.running) { return; }
+  const p = vocatoneGame.pitch;
+  updatePitch(p);
+  if (p > 0) {
+    if (p > f_max) {
+      statusDisplay.textContent = 'Shrill';
+      statusDisplay.className = 'text-lg font-bold text-warning';
+      setCanvasFlash('flash-warning');
+    } else {
+      statusDisplay.textContent = 'Stable';
+      statusDisplay.className = 'text-lg font-bold text-success';
+      setCanvasFlash('flash-success');
+    }
+  } else {
+    statusDisplay.textContent = 'Idle';
+    statusDisplay.className = 'text-lg font-bold text-muted';
+    setCanvasFlash(null);
+  }
+}
+
+async function startVocaTone() {
+  if (vocatoneRunning || gatekeeper.getState() !== STATES.IDLE) { return; }
+  showError(false);
+  vocatoneRunning = true;
+  btnStart.disabled = true;
+  gameCanvas.width = gameCanvas.clientWidth;
+  gameCanvas.height = gameCanvas.clientHeight;
+  vocatoneGame = new VocaTone(gameCanvas, {
+    onError: function (title, msg) {
+      vocatoneRunning = false;
+      btnStart.disabled = false;
+      showError(true, title, msg);
+    },
+    onFlash: function (type) {
+      setCanvasFlash(type);
+    },
+  });
+  await vocatoneGame.start();
+  if (vocatoneGame.running) {
+    statusDisplay.textContent = 'Listening';
+    statusDisplay.className = 'text-lg font-bold text-primary';
+    updateAccuracy(0);
+    updateStars(0);
+  }
+}
+
+function stopVocaTone() {
+  if (!vocatoneRunning && !vocatoneGame) { return; }
+  vocatoneRunning = false;
+  btnStart.disabled = false;
+  if (vocatoneGame) { vocatoneGame.stop(); vocatoneGame = null; }
+  updatePitch(0);
+  statusDisplay.textContent = 'Idle';
+  statusDisplay.className = 'text-lg font-bold text-muted';
+  updateAccuracy(0);
+  updateStars(0);
+  setCanvasFlash(null);
+  showError(false);
+}
+
+function enterVocatoneView() {
+  moduleSelect.classList.add('hidden');
+  appHeader.classList.add('hidden');
+  cameraView.classList.add('hidden');
+  gameCanvas.parentElement.classList.remove('hidden');
+  btnBack.classList.remove('hidden');
+}
+
 btnVocatone.addEventListener('click', function () {
-  enterModuleView();
-  startSession();
+  enterVocatoneView();
 });
 
 btnDualsense.addEventListener('click', function () {
@@ -500,8 +583,8 @@ btnBack.addEventListener('click', function () {
   leaveModuleView();
 });
 
-btnStart.addEventListener('click', startSession);
-btnStop.addEventListener('click', stopSession);
+btnStart.addEventListener('click', startVocaTone);
+btnStop.addEventListener('click', stopVocaTone);
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
