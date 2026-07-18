@@ -20,10 +20,21 @@
 ### `src/utils/vision.js`
 - `getMouthMidpoint(landmarks)` — midpoint 4 landmark bibir + rx/ry + 0.02 padding
 
-### `src/main.js`
-- D10.3: `clearAllFlash()` helper, flash priority red>yellow>green, `faceEverDetected` flag, `flash-error` langsung di `triggerFallback()`
-- D11.1: `startSilhouetteLoop()` (RAF 60fps), `stopSilhouetteLoop()`
-- D11.2: `mouthData` global, update di `onFaceLandmarks`, pass null saat face hilang
+### `index.html` (restrukturasi)
+- **Dashboard screen baru** (`#screen-dashboard`): landing page dengan 2 module card (VocaTone + Dual-Sense), mobile-first layout
+- Dual-Sense screen dipindah ke `#screen-dualsense` (hidden by default) + back button
+- VocaTone screen baru (`#screen-vocatone`): game canvas + pitch display + status + back button
+- `#game-canvas` dipindah dari camera-view ke VocaTone screen
+- `#flash-overlay` dipindah ke dalam Dual-Sense screen agar tidak tumpang tindih
+
+### `src/main.js` (restrukturasi besar)
+- **Screen Router**: `showScreen(id)` mengontrol 3 screen (dashboard, dualsense, vocatone)
+- **Dashboard**: `btn-vocatone` → navigasi ke VocaTone, `btn-dualsense` → navigasi ke Dual-Sense
+- **Navigation**: Back buttons (`btn-back-dualsense`, `btn-back-vocatone`) → stop semua + kembali ke dashboard
+- **VocaTone functions**: `startVocaTone()`, `stopVocaTone()` — init AudioContext + VocaToneGame loop + pitch polling terpisah
+- `navigateToDashboard()` — cleanup semua resource (camera, audio, gatekeeper, game)
+- Import `VocaToneGame` dan `getPitchHz` dari modul masing-masing
+- Lint fix: curly braces di dua single-line if
 
 ### `src/styles/main.css`
 - `.flash-error { background-color: #EF4444; opacity: 0.25 !important; }`
@@ -41,6 +52,7 @@
 1. B5.x — VocaTone Game Loop (jika diperlukan)
 2. Update GitHub Issues — close task yang sudah selesai
 3. Testing integrasi end-to-end
+4. IndexedDB history logging (deferred to post-PoC)
 
 ## Catatan Penting
 - Trigger I: `LAR >= 0.2 && LAR < 0.5 && mouthWidth > resting * 1.3`

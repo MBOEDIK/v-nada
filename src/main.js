@@ -2,10 +2,27 @@ import './styles/main.css';
 import { initCamera, computeLipAspectRatio, extractLipLandmarks, computeEuclideanDistance, getMouthMidpoint } from './utils/vision.js';
 import { lar_threshold, f_min, f_max } from './utils/constants.js';
 import { gatekeeper, STATES } from './utils/gatekeeper.js';
-import { initAudioStream, closeAudioStream, extractPitch } from './utils/audio.js';
+import { initAudioStream, closeAudioStream, extractPitch, getPitchHz } from './utils/audio.js';
 import { drawSilhouette } from './components/overlay.js';
+import VocaToneGame from './components/game.js';
 
 const $ = (id) => document.getElementById(id);
+
+// ── Screen Router ────────────────────────────────────────────────────
+
+const SCREENS = ['screen-dashboard', 'screen-dualsense', 'screen-vocatone'];
+
+function showScreen(screenId) {
+  SCREENS.forEach((id) => {
+    const el = $(id);
+    if (el) {
+      el.classList.toggle('hidden', id !== screenId);
+      el.classList.toggle('flex', id === screenId);
+    }
+  });
+}
+
+// ── Dual-Sense Elements ──────────────────────────────────────────────
 
 const cameraFeed = $('camera-feed');
 const overlayCanvas = $('overlay-canvas');
@@ -20,6 +37,23 @@ const vowelIndicator = $('vowel-indicator');
 const flashOverlay = $('flash-overlay');
 const btnStart = $('btn-start');
 const btnStop = $('btn-stop');
+
+// ── VocaTone Elements ────────────────────────────────────────────────
+
+const gameCanvas = $('game-canvas');
+const vocPitchDisplay = $('voc-pitch-display');
+const vocStatusDisplay = $('voc-status-display');
+const btnVocStart = $('btn-voc-start');
+const btnVocStop = $('btn-voc-stop');
+
+// ── Navigation Elements ──────────────────────────────────────────────
+
+const btnVocatone = $('btn-vocatone');
+const btnDualsense = $('btn-dualsense');
+const btnBackDualsense = $('btn-back-dualsense');
+const btnBackVocatone = $('btn-back-vocatone');
+
+// ── Shared State ─────────────────────────────────────────────────────
 
 let cameraController = null;
 let sessionActive = false;
@@ -44,7 +78,17 @@ let mouthData = null;
 let silhouetteRAF = null;
 let overlayCtx = null;
 
+// ── VocaTone State ─────────────────────────────────────────────────
+
+let vocGame = null;
+let vocActive = false;
+let vocPitchInterval = null;
+
 const NO_FACE_TIMEOUT = 1500;
+
+// ════════════════════════════════════════════════════════════════════
+// DUAL-SENSE FUNCTIONS (unchanged from original)
+// ════════════════════════════════════════════════════════════════════
 
 function updateLar(value) {
   larDisplay.textContent = value.toFixed(2);
@@ -441,7 +485,7 @@ function onFaceLandmarks(landmarks) {
   }
 }
 
-async function startSession() {
+async function startDualSenseSession() {
   sessionActive = true;
   restingMouthWidth = Infinity;
   faceEverDetected = false;
@@ -476,7 +520,7 @@ async function startSession() {
   }
 }
 
-function stopSession() {
+function stopDualSenseSession() {
   sessionActive = false;
 
   stopSilhouetteLoop();
@@ -505,8 +549,133 @@ function stopSession() {
   updatePitch(0);
 }
 
-btnStart.addEventListener('click', startSession);
-btnStop.addEventListener('click', stopSession);
+// ════════════════════════════════════════════════════════════════════
+// VOCATONE FUNCTIONS
+// ════════════════════════════════════════════════════════════════════
+
+function startVocaTone() {
+  if (vocActive) { return; }
+  vocActive = true;
+
+  gameCanvas.width = gameCanvas.clientWidth;
+  gameCanvas.height = gameCanvas.clientHeight;
+
+  vocGame = new VocaToneGame(gameCanvas);
+  vocGame.setTargetRange(f_min, f_max);
+
+  updateVocPitch(0);
+  updateVocStatus('Idle');
+
+  initAudioStream()
+    .then(() => {
+      vocGame.startLoop(getPitchHz);
+      startVocPitchDisplay();
+      updateVocStatus('Active');
+    })
+    .catch((err) => {
+      console.warn('[VocaTone] Mic unavailable:', err.message);
+      vocGame.startLoop(() => 0);
+      startVocPitchDisplay();
+      updateVocStatus('No Mic');
+    });
+}
+
+function stopVocaTone() {
+  if (!vocActive) { return; }
+  vocActive = false;
+
+  if (vocGame) {
+    vocGame.destroy();
+    vocGame = null;
+  }
+
+  stopVocPitchDisplay();
+
+  if (audioInitialized) {
+    closeAudioStream();
+    audioInitialized = false;
+  }
+
+  updateVocPitch(0);
+  updateVocStatus('Idle');
+
+  const ctx = gameCanvas.getContext('2d');
+  ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+}
+
+function updateVocPitch(value) {
+  vocPitchDisplay.textContent = (value !== null && value > 0)
+    ? `${Math.round(value)} Hz`
+    : '--';
+}
+
+function updateVocStatus(text) {
+  vocStatusDisplay.textContent = text;
+}
+
+function startVocPitchDisplay() {
+  stopVocPitchDisplay();
+  vocPitchInterval = setInterval(() => {
+    if (!vocActive) {
+      stopVocPitchDisplay();
+      return;
+    }
+    const pitch = extractPitch();
+    updateVocPitch(pitch);
+  }, 150);
+}
+
+function stopVocPitchDisplay() {
+  if (vocPitchInterval) {
+    clearInterval(vocPitchInterval);
+    vocPitchInterval = null;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SCREEN NAVIGATION
+// ════════════════════════════════════════════════════════════════════
+
+function navigateToDashboard() {
+  stopDualSenseSession();
+  stopVocaTone();
+
+  if (audioInitialized) {
+    closeAudioStream();
+    audioInitialized = false;
+  }
+
+  showScreen('screen-dashboard');
+}
+
+function navigateToVocaTone() {
+  navigateToDashboard();
+  showScreen('screen-vocatone');
+}
+
+function navigateToDualSense() {
+  navigateToDashboard();
+  showScreen('screen-dualsense');
+}
+
+// ── Event Listeners ──────────────────────────────────────────────────
+
+btnVocatone.addEventListener('click', navigateToVocaTone);
+btnDualsense.addEventListener('click', navigateToDualSense);
+btnBackDualsense.addEventListener('click', navigateToDashboard);
+btnBackVocatone.addEventListener('click', navigateToDashboard);
+
+// Dual-Sense controls
+btnStart.addEventListener('click', startDualSenseSession);
+btnStop.addEventListener('click', stopDualSenseSession);
+
+// VocaTone controls
+btnVocStart.addEventListener('click', startVocaTone);
+btnVocStop.addEventListener('click', stopVocaTone);
+
+// ── Init: start on dashboard ─────────────────────────────────────────
+
+showScreen('screen-dashboard');
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js');
