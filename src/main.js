@@ -576,27 +576,6 @@ function setCanvasFlash(type) {
   }
 }
 
-function updateHUD() {
-  if (!vocatone_game || !vocatone_game.running) { return; }
-  const p = vocatone_game.pitch;
-  updatePitch(p);
-  if (p > 0) {
-    if (p > f_max) {
-      statusDisplay.textContent = 'Shrill';
-      statusDisplay.className = 'text-lg font-bold text-warning';
-      setCanvasFlash('flash-warning');
-    } else {
-      statusDisplay.textContent = 'Stable';
-      statusDisplay.className = 'text-lg font-bold text-success';
-      setCanvasFlash('flash-success');
-    }
-  } else {
-    statusDisplay.textContent = 'Idle';
-    statusDisplay.className = 'text-lg font-bold text-muted';
-    setCanvasFlash('flash-error');
-  }
-}
-
 async function startVocaTone() {
   if (vocatone_running || gatekeeper.getState() !== STATES.IDLE) { return; }
   showError(false);

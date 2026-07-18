@@ -82,7 +82,6 @@ export function initCamera({ videoElement, onFace, onNoFace } = {}) {
     { width: 480, height: 480 },
     { width: 360, height: 360 },
   ];
-  const currentResIndex = 0;
   let currentCamera = null;
 
   async function tryStart(resIndex) {

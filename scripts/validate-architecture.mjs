@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import { resolve, extname } from 'path';
 

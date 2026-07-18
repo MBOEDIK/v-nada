@@ -1,5 +1,5 @@
 import { extractPitch, initAudioStream, closeAudioStream, calibrateAmbientNoise } from '../utils/audio.js';
-import { lar_threshold, f_min } from '../utils/constants.js';
+import { f_min } from '../utils/constants.js';
 
 const FALL_ACCEL = 0.0008;
 const RISE_SPEED = -0.004;
@@ -77,9 +77,6 @@ export class VocaTone {
   }
 
   update() {
-    const w = this.canvas.width;
-    const dh = this.canvas.height;
-
     this.scale += (this.target_scale - this.scale) * 0.1;
 
     if (this.pitch > 0) {
@@ -172,7 +169,7 @@ export class VocaTone {
     ctx.restore();
   }
 
-  drawVowel(ctx, w, h) {
+  drawVowel(ctx, w) {
     ctx.save();
     ctx.font = 'bold 72pt Montserrat, sans-serif';
     ctx.textAlign = 'center';
