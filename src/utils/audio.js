@@ -62,6 +62,7 @@ export async function initAudioStream() {
   analyserNode = audioContext.createAnalyser();
   analyserNode.fftSize = FFT_SIZE;
   source.connect(analyserNode);
+  analyserNode.connect(audioContext.destination);
   dataArray = new Float32Array(analyserNode.fftSize);
   return audioContext;
 }

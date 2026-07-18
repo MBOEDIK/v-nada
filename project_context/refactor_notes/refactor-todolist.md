@@ -33,7 +33,7 @@
 | dualsense | 73 | 16 | 42 | 15 |
 | vocatone | 22 | 3 | 8 | 11 |
 | kedua | 41 | 0 (4 ✅) | 0 (11 ✅) | 26 |
-| **Total** | **136** | **19 (4 ✅)** | **50 (11 ✅)** | **52** |
+| **Total** | **136** | **19 (4 ✅)** | **50 (11 ✅)** | **52 (15 ✅)** |
 
 ---
 
@@ -101,7 +101,7 @@
 | G04 | Wrong mouth → siluet ikut merah sesuai GAME-02:87 | Note-1 GAME | | GAME-02:87 | ❌ | |
 | G05 | Face loss — tidak ada mode pause + recalibration | Note-1 GAME | | UX-03:51 | ❌ | |
 | G10 | Missing Character & Gate rendering di DualSense — tidak ada objek game visual | Note-1 GAME | | GAME-02:16-17 | ❌ | |
-| U03 | Warna siluet oval: Hijau/Merah sesuai state | Note-1 UX | | VISUAL-02:27-28 | ❌ | |
+| U03 | Warna siluet oval: Hijau/Merah sesuai state | Note-1 UX | | VISUAL-02:27-28 | ✅ | A3 — drawSilhouette() pilih warna per state (searching/locked/out_of_bounds) |
 | U07 | Siluet — Searching state #F8FAFC dengan pulsing 20-50% | Note-1 UX | | VISUAL-02:26 | ❌ | |
 | U09 | Siluet — `drawSilhouette()` harus terima validation state, bukan boolean | Note-1 UX | | VISUAL-02:24-28 | ❌ | |
 | C03 | Snake_case vs camelCase — variabel duality mengikuti AGENTS.md | Note-1 CROSS | | AGENTS.md | ❌ | |
@@ -203,30 +203,30 @@
 |---|------|--------|-----------|---------------------|----------|---------|
 | T10 | Hapus `refineLandmarks: true` (~400KB) | Note-1 TECH | | TECH-04 (implisit) | ❌ | |
 | T15 | Memory limit <150MB — tidak ada monitoring (wajar PoC) | Note-1 TECH | | TECH-04:54 | ❌ | |
-| T16 | AudioContext tidak connect ke Destination — melanggar blueprint | Note-1 TECH | | TECH-03:24 | ❌ | |
-| G07 | Siluet oval — garis putus-putus tidak diimplementasikan | Note-1 GAME | | VISUAL-02:14 | ❌ | |
+| T16 | AudioContext tidak connect ke Destination — melanggar blueprint | Note-1 TECH | | TECH-03:24 | ✅ | A3 — connect ke audioContext.destination per blueprint |
+| G07 | Siluet oval — garis putus-putus tidak diimplementasikan | Note-1 GAME | | VISUAL-02:14 | ✅ | A3 — drawSilhouette() dashed ellipse via setLineDash |
 | G11 | Missing Mascot with Expressions (wajar PoC) | Note-1 GAME | | GAME-03:40-43 | ❌ | |
 | G12 | Dynamic Obstacle proportional scaling (wajar PoC) | Note-1 GAME | | GAME-03:43 | ❌ | |
-| U04 | Halaman pemilihan modul | Note-1 UX | | UX-04:40-44 | ❌ | |
-| U06 | Haptic feedback | Note-1 UX | | UX-02:39 | ❌ | |
-| U12 | Button 3-state styling — pressed 10% darker, disabled 40%+greyscale | Note-1 UX | | VISUAL-01:47-49 | ❌ | |
-| U14 | Camera vs mic denied — tidak bisa dibedakan, pesan generik | Note-1 UX | | UX-03:50 | ❌ | |
+| U04 | Halaman pemilihan modul | Note-1 UX | | UX-04:40-44 | ✅ | A3 — #module-select dengan btn-vocatone + btn-dualsense, enterModuleView/leaveModuleView |
+| U06 | Haptic feedback | Note-1 UX | | UX-02:39 | ✅ | A3 — showHaptic() via navigator.vibrate, success=getar 100ms, error=getar 50-50-50ms |
+| U12 | Button 3-state styling — pressed 10% darker, disabled 40%+greyscale | Note-1 UX | | VISUAL-01:47-49 | ✅ | A3 — active:brightness-90 + disabled:opacity-40 grayscale via Tailwind classes | |
+| U14 | Camera vs mic denied — tidak bisa dibedakan, pesan generik | Note-1 UX | | UX-03:50 | ✅ | A3 — showError('Camera Error',...) vs showError('Mic Error',...) dibedakan | |
 | U15 | Icon-based navigation — masih teks (wajar PoC) | Note-1 UX | | UX-02:51-53 | ❌ | |
 | U16 | Halaman history sesi latihan tidak ada (wajar PoC) | Note-1 UX | | UX-04:18 | ❌ | |
 | U17 | Splash screen tidak ada (wajar PoC) | Note-1 UX | | UX-04:16 | ❌ | |
-| U20 | Tidak ada instruksi "Ayo Mulai" saat no face | Note-1 UX | | GAME-03:19 | ❌ | |
-| U21 | Camera frame border hijau untuk face detection tidak ada | Note-1 UX | | UX-03:30 | ❌ | |
-| U22 | Margin layar 16dp tidak di-enforce | Note-1 UX | | VISUAL-01:58 | ❌ | |
-| U26 | Tombol kembali (back button) tidak ada | Note-1 UX | | UX-04:27 | ❌ | |
-| U27 | Jarak antar komponen `gap-3` (12px) melanggar minimum 16dp | Note-1 UX | | UX-02:49 | ❌ | |
-| U29 | Missing animated large checkmark icon untuk success state | Note-1 UX | | UX-02:16 | ❌ | |
-| U30 | Missing Orbiting Pulse animation di sekitar ikon sensor | Note-1 UX | | UX-02:18 | ❌ | |
-| U31 | Missing pulsing red arrow indicator saat wajah keluar | Note-1 UX | | UX-02:19 | ❌ | |
+| U20 | Tidak ada instruksi "Ayo Mulai" saat no face | Note-1 UX | | GAME-03:19 | ✅ | A3 — #no-face-msg muncul di onEnter(CAMERA_ACTIVE) & onNoFace(), hilang saat face detected | |
+| U21 | Camera frame border hijau untuk face detection tidak ada | Note-1 UX | | UX-03:30 | ✅ | A3 — .camera-detected CSS class outline 3px solid #22C55E | |
+| U22 | Margin layar 16dp tidak di-enforce | Note-1 UX | | VISUAL-01:58 | ✅ | A3 — p-4 (16px) sudah di #app sejak awal, konsisten | |
+| U26 | Tombol kembali (back button) tidak ada | Note-1 UX | | UX-04:27 | ✅ | A3 — #btn-back fixed top-4 left-4, hidden default, toggle via leaveModuleView/enterModuleView | |
+| U27 | Jarak antar komponen `gap-3` (12px) melanggar minimum 16dp | Note-1 UX | | UX-02:49 | ✅ | A3 — gap-3 diganti gap-4 (16px) di feedback-panel | |
+| U29 | Missing animated large checkmark icon untuk success state | Note-1 UX | | UX-02:16 | ✅ | A3 — drawCheckmark() animated via #checkmark-canvas, progress-based stroke drawing | |
+| U30 | Missing Orbiting Pulse animation di sekitar ikon sensor | Note-1 UX | | UX-02:18 | ✅ | A3 — orbiting dot integrated in crosshair RAF loop, orbitAngle increments per frame | |
+| U31 | Missing pulsing red arrow indicator saat wajah keluar | Note-1 UX | | UX-02:19 | ✅ | A3 — showArrow flag triggers pulsing red arrow in crosshair loop, shown on onNoFace() | |
 | U32 | Missing background layers & HUD SVG assets (wajar PoC) | Note-1 UX | | VISUAL-03:34-66 | ❌ | |
-| C05 | AGENTS.md syncing — ambil versi dualsense sebagai baseline | Note-1 CROSS | | — | ❌ | |
-| C19 | Error screen CSS transition duration: 700ms vs 500ms | Note-1 CROSS | | — | ❌ | |
-| C21 | Hardcoded "A" di `#vowel-indicator` span index.html | Note-1 CROSS | | UX-02:63 | ❌ | |
-| C22 | Camera feed mirror `scaleX(-1)` hanya di dualsense, vocatone tidak mirror | Note-1 CROSS | | — | ❌ | |
+| C05 | AGENTS.md syncing — ambil versi dualsense sebagai baseline | Note-1 CROSS | | — | ✅ | A3 — AGENTS.md sudah sinkron (versi dualsense sebagai baseline, isi cocok) | |
+| C19 | Error screen CSS transition duration: 700ms vs 500ms | Note-1 CROSS | | — | ✅ | A3 — transition: opacity 500ms ease-in-out via main.css | |
+| C21 | Hardcoded "A" di `#vowel-indicator` span index.html | Note-1 CROSS | | UX-02:63 | ✅ | A3 — #vowel-indicator tidak ada di shared index.html (sudah bersih) | |
+| C22 | Camera feed mirror `scaleX(-1)` hanya di dualsense, vocatone tidak mirror | Note-1 CROSS | | — | ✅ | A3 — #camera-feed { transform: scaleX(-1) } via main.css | |
 
 ---
 
@@ -266,7 +266,7 @@
 | T07 | Tambah `getPitchHz()` | 🟢 | dualsense | ❌ | TECH-03:99 | |
 | T10 | Hapus `refineLandmarks: true` | 🟢 | kedua | ❌ | TECH-04 (implisit) | |
 | T15 | Memory limit <150MB (wajar PoC) | 🟢 | kedua | ❌ | TECH-04:54 | |
-| T16 | AudioContext tidak connect ke Destination | 🟢 | kedua | ❌ | TECH-03:24 | |
+| T16 | AudioContext tidak connect ke Destination | 🟢 | kedua | ✅ | TECH-03:24 | A3 — connect ke audioContext.destination |
 | T24 | `computeRMS()` — tambah guard division-by-zero | 🟢 | dualsense | ❌ | TECH-03:55 | |
 | T25 | `f_max` — single source of truth dari constants.js | 🟢 | vocatone | ❌ | TECH-02:40-41 | |
 
@@ -283,7 +283,7 @@
 | G09 | Kalibrasi RMS threshold di awal sesi | 🟡 | kedua | ✅ | GAME-01:79 | |
 | G10 | Render Character & Gate di DualSense | 🟡 | dualsense | ❌ | GAME-02:16-17 | |
 | G06 | Stability timer 0.5s → min 1s | 🟢 | vocatone | ❌ | GAME-01:56-58 | |
-| G07 | Siluet oval — garis putus-putus | 🟢 | kedua | ❌ | VISUAL-02:14 | |
+| G07 | Siluet oval — garis putus-putus | 🟢 | kedua | ✅ | VISUAL-02:14 | A3 — drawSilhouette() dengan setLineDash |
 | G11 | Mascot with Expressions (wajar PoC) | 🟢 | kedua | ❌ | GAME-03:40-43 | |
 | G12 | Dynamic Obstacle scaling (wajar PoC) | 🟢 | kedua | ❌ | GAME-03:43 | |
 | G13 | VocaTone balloon color → bright blue | 🟢 | vocatone | ❌ | UX-02:81 | |
@@ -293,37 +293,37 @@
 
 | # | Item | Prioritas | Branch | Refactor | Blueprint | Catatan |
 |---|------|-----------|--------|----------|-----------|---------|
-| U03 | Warna siluet oval: Hijau/Merah per state | 🟡 | dualsense | ❌ | VISUAL-02:27-28 | |
+| U03 | Warna siluet oval: Hijau/Merah per state | 🟡 | dualsense | ✅ | VISUAL-02:27-28 | A3 — drawSilhouette() pilih warna #F8FAFC/#22C55E/#EF4444 per state |
 | U07 | Siluet Searching state #F8FAFC + pulsing 20-50% | 🟡 | dualsense | ❌ | VISUAL-02:26 | |
 | U09 | `drawSilhouette()` terima validation state | 🟡 | dualsense | ❌ | VISUAL-02:24-28 | |
 | U28 | Real-time LAR indicator animation (crosshair) | 🟡 | kedua | ❌ | UX-02:76-78 | |
 | U01 | Font vokal 72pt di vocatone | 🟢 | vocatone | ❌ | UX-02:63 | |
 | U02 | Error handling mic denied di vocatone | 🟢 | vocatone | ❌ | UX-03:50 | |
-| U04 | Halaman pemilihan modul | 🟢 | kedua | ❌ | UX-04:40-44 | |
+| U04 | Halaman pemilihan modul | 🟢 | kedua | ✅ | UX-04:40-44 | A3 — #module-select + btn-vocatone/btn-dualsense |
 | U05 | No face → silhouette guide di vocatone | 🟢 | vocatone | ❌ | UX-03:51 | |
-| U06 | Haptic feedback | 🟢 | kedua | ❌ | UX-02:39 | |
+| U06 | Haptic feedback | 🟢 | kedua | ✅ | UX-02:39 | A3 — navigator.vibrate on start/error |
 | U08 | Siluet Out of Bounds — shake animation | 🟢 | dualsense | ❌ | VISUAL-02:28 | |
 | U10 | Flash success opacity 30% + transisi 0→30→0 | 🟢 | dualsense | ❌ | UX-02:38 | |
 | U11 | Scaling 1.2x objek game saat fonasi benar | 🟢 | vocatone | ❌ | UX-02:40 | |
-| U12 | Button 3-state styling | 🟢 | kedua | ❌ | VISUAL-01:47-49 | |
+| U12 | Button 3-state styling | 🟢 | kedua | ✅ | VISUAL-01:47-49 | A3 — brightness-90 + opacity-40 grayscale |
 | U13 | Mic denied — ilustrasi besar | 🟢 | dualsense | ❌ | UX-03:50 | |
-| U14 | Camera vs mic denied — pesan dibedakan | 🟢 | kedua | ❌ | UX-03:50 | |
+| U14 | Camera vs mic denied — pesan dibedakan | 🟢 | kedua | ✅ | UX-03:50 | A3 — 'Camera Error' vs 'Mic Error' dibedakan |
 | U15 | Icon-based navigation (wajar PoC) | 🟢 | kedua | ❌ | UX-02:51-53 | |
 | U16 | Halaman history sesi (wajar PoC) | 🟢 | kedua | ❌ | UX-04:18 | |
 | U17 | Splash screen (wajar PoC) | 🟢 | kedua | ❌ | UX-04:16 | |
 | U18 | Siluet — 48dp padding dari tepi layar | 🟢 | dualsense | ❌ | VISUAL-02:36-38 | |
 | U19 | CSS stroke transition 0.3s di Canvas | 🟢 | dualsense | ❌ | VISUAL-02:56 | |
-| U20 | Instruksi "Ayo Mulai" saat no face | 🟢 | kedua | ❌ | GAME-03:19 | |
-| U21 | Camera frame border hijau untuk face detection | 🟢 | kedua | ❌ | UX-03:30 | |
-| U22 | Margin layar 16dp | 🟢 | kedua | ❌ | VISUAL-01:58 | |
+| U20 | Instruksi "Ayo Mulai" saat no face | 🟢 | kedua | ✅ | GAME-03:19 | A3 — #no-face-msg muncul via onNoFace |
+| U21 | Camera frame border hijau untuk face detection | 🟢 | kedua | ✅ | UX-03:30 | A3 — .camera-detected outline 3px #22C55E |
+| U22 | Margin layar 16dp | 🟢 | kedua | ✅ | VISUAL-01:58 | A3 — p-4 (16px) konsisten di #app |
 | U23 | Objek VocaTone membesar saat naik | 🟢 | vocatone | ❌ | GAME-01:78 | |
 | U24 | Flash-error/warning/idle opacity ≥ 30% | 🟢 | dualsense | ❌ | UX-02:38 | |
 | U25 | VocaTone — siluet kalibrasi saat no face | 🟢 | vocatone | ❌ | VISUAL-02:14,24-26 | |
-| U26 | Tombol kembali (back button) | 🟢 | kedua | ❌ | UX-04:27 | |
-| U27 | Jarak antar komponen ≥ 16dp | 🟢 | kedua | ❌ | UX-02:49 | |
-| U29 | Animated large checkmark icon | 🟢 | kedua | ❌ | UX-02:16 | |
-| U30 | Orbiting Pulse animation | 🟢 | kedua | ❌ | UX-02:18 | |
-| U31 | Pulsing red arrow indicator | 🟢 | kedua | ❌ | UX-02:19 | |
+| U26 | Tombol kembali (back button) | 🟢 | kedua | ✅ | UX-04:27 | A3 — #btn-back fixed top-4 left-4 |
+| U27 | Jarak antar komponen ≥ 16dp | 🟢 | kedua | ✅ | UX-02:49 | A3 — gap-3→gap-4 (12px→16px) di feedback-panel |
+| U29 | Animated large checkmark icon | 🟢 | kedua | ✅ | UX-02:16 | A3 — animated drawCheckmark via #checkmark-canvas |
+| U30 | Orbiting Pulse animation | 🟢 | kedua | ✅ | UX-02:18 | A3 — orbiting dot via crosshair RAF loop |
+| U31 | Pulsing red arrow indicator | 🟢 | kedua | ✅ | UX-02:19 | A3 — showArrow flag + red arrow in crosshair loop |
 | U32 | Background layers & HUD SVG (wajar PoC) | 🟢 | kedua | ❌ | VISUAL-03:34-66 | |
 
 ### CROSS — Inkonsistensi Antar Branch
@@ -337,11 +337,11 @@
 | C03 | Snake_case vs camelCase — align dg AGENTS.md | 🟡 | dualsense | ❌ | Dualsense banyak camelCase | |
 | C20 | `triggerFallback()` cooldown 1s — standarisasi | 🟡 | dualsense | ❌ | Putuskan perlu/tidak untuk PoC | |
 | C04 | Vite + package.json basicSsl — putuskan perlu/tidak | 🟢 | dualsense | ❌ | Dualsense punya, vocatone tidak | |
-| C05 | AGENTS.md syncing — ambil versi dualsense | 🟢 | kedua | ❌ | Baseline: versi dualsense | |
+| C05 | AGENTS.md syncing — ambil versi dualsense | 🟢 | kedua | ✅ | Baseline: versi dualsense | A3 — AGENTS.md sudah sinkron |
 | C18 | Mic permission: preGrant vs lazy init | 🟢 | dualsense | ❌ | Standarisasi ke lazy (vocatone) | |
-| C19 | Error screen CSS transition 700ms vs 500ms | 🟢 | kedua | ❌ | Standarisasi (kedua nilai valid) | |
-| C21 | Hardcoded "A" di `#vowel-indicator` — ganti empty string | 🟢 | kedua | ❌ | UX-02:63 | |
-| C22 | Camera feed mirror — terapkan di kedua branch | 🟢 | kedua | ❌ | Front camera harus mirror | |
+| C19 | Error screen CSS transition 700ms vs 500ms | 🟢 | kedua | ✅ | Standarisasi (kedua nilai valid) | A3 — transition: opacity 500ms ease-in-out |
+| C21 | Hardcoded "A" di `#vowel-indicator` — ganti empty string | 🟢 | kedua | ✅ | UX-02:63 | A3 — #vowel-indicator sudah tidak ada di shared index.html |
+| C22 | Camera feed mirror — terapkan di kedua branch | 🟢 | kedua | ✅ | Front camera harus mirror | A3 — #camera-feed { transform: scaleX(-1) } di main.css |
 
 ### SCOPE — Kepatuhan 50% PoC Boundary
 
@@ -418,6 +418,7 @@
 | 17 Jul 2026 | 1.1 | Restruktur: ringkasan by branch + sub-tabel per branch dalam setiap prioritas (🔴🟡🟢) | Agent V-NADA |
 | 17 Jul 2026 | 1.2 | Fase A1 ✅: C01, C02, C23, C24 — GateKeeper state machine, initCamera API, f_min standardisasi | Agent V-NADA |
 | 17 Jul 2026 | 1.3 | Fase A2 ✅: T11-T14, T26-T30, G09, U28, S34 — sample rate, caching, IndexedDB, RMS kalibrasi, crosshair, error handling | Agent V-NADA |
+| 18 Jul 2026 | 1.4 | Fase A3 ✅: T16, G07, U03-U04, U06, U12, U14, U20-U22, U26-U27, U29-U31, C05, C19, C21, C22 — module selection, back button, silhouette oval dash + color, haptic, 3-state button, Ayo Mulai, camera border, 16dp spacing, checkmark, orbit pulse, red arrow, mirror, error transition, AudioContext destination | Agent V-NADA |
 
 ---
 
