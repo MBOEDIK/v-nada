@@ -46,6 +46,19 @@
   transition: opacity 500ms ease-in-out;
 }
 
+@keyframes flash-blink {
+  0%, 100% { opacity: 0; }
+  15% { opacity: 0.35; }
+  30% { opacity: 0; }
+  45% { opacity: 0.35; }
+  60% { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+.flash-blink {
+  animation: flash-blink 1.2s ease-in-out 2;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   @keyframes checkmark-appear {
     0% { transform: scale(0); opacity: 0; }

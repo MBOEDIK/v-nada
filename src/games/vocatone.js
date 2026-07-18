@@ -16,26 +16,26 @@ export class VocaTone {
     this.onError = opts.onError || function () {};
     this.onFlash = opts.onFlash || function () {};
 
-    this.balloonY = 0.5;
-    this.balloonVy = 0;
+    this.balloon_y = 0.5;
+    this.balloon_vy = 0;
     this.pitch = 0;
     this.rms = 0;
     this.running = false;
-    this.audioReady = false;
+    this.audio_ready = false;
     this.scale = 1;
-    this.targetScale = 1;
-    this.stableSince = 0;
+    this.target_scale = 1;
+    this.stable_since = 0;
     this.rising = false;
-    this.flashTimer = null;
-    this.lastFlash = null;
-    this.updateId = null;
+    this.flash_timer = null;
+    this.last_flash = null;
+    this.update_id = null;
   }
 
   async start() {
     try {
       await initAudioStream();
       await calibrateAmbientNoise();
-      this.audioReady = true;
+      this.audio_ready = true;
     } catch (err) {
       this.onError('Mic Error', 'Microphone access denied or unavailable. Please check permissions.');
       return;
@@ -47,24 +47,24 @@ export class VocaTone {
 
   stop() {
     this.running = false;
-    this.audioReady = false;
+    this.audio_ready = false;
     closeAudioStream();
-    this.balloonY = 0.5;
-    this.balloonVy = 0;
+    this.balloon_y = 0.5;
+    this.balloon_vy = 0;
     this.pitch = 0;
     this.rms = 0;
     this.scale = 1;
-    this.targetScale = 1;
-    this.stableSince = 0;
+    this.target_scale = 1;
+    this.stable_since = 0;
     this.rising = false;
     this.clearFlash();
-    if (this.updateId) { clearInterval(this.updateId); this.updateId = null; }
+    if (this.update_id) { clearInterval(this.update_id); this.update_id = null; }
   }
 
   startPolling() {
-    if (this.updateId) { clearInterval(this.updateId); }
-    this.updateId = setInterval(function () {
-      if (!this.running || !this.audioReady) { return; }
+    if (this.update_id) { clearInterval(this.update_id); }
+    this.update_id = setInterval(function () {
+      if (!this.running || !this.audio_ready) { return; }
       this.pitch = extractPitch();
     }.bind(this), UPDATE_INTERVAL);
   }
@@ -80,32 +80,33 @@ export class VocaTone {
     const w = this.canvas.width;
     const dh = this.canvas.height;
 
-    this.scale += (this.targetScale - this.scale) * 0.1;
+    this.scale += (this.target_scale - this.scale) * 0.1;
 
     if (this.pitch > 0) {
-      this.balloonVy = RISE_SPEED;
+      this.balloon_vy = RISE_SPEED;
       this.rising = true;
-      this.targetScale = 1.2;
+      this.target_scale = 1.2;
 
       if (this.pitch >= f_min) {
-        if (this.stableSince === 0) { this.stableSince = Date.now(); }
-        if (Date.now() - this.stableSince >= STABILITY_MS && this.balloonY > 0.25 && this.balloonY < 0.75) {
-          this.balloonVy = 0;
+        if (this.stable_since === 0) { this.stable_since = Date.now(); }
+        if (Date.now() - this.stable_since >= STABILITY_MS && this.balloon_y > 0.25 && this.balloon_y < 0.75) {
+          this.balloon_y += (0.5 - this.balloon_y) * 0.05;
+          this.balloon_vy = 0;
           this.rising = false;
-          this.targetScale = 1.0;
+          this.target_scale = 1.0;
         }
       } else {
-        this.stableSince = 0;
+        this.stable_since = 0;
       }
     } else {
-      this.balloonVy += FALL_ACCEL;
+      this.balloon_vy += FALL_ACCEL;
       this.rising = false;
-      this.targetScale = 1.0;
-      this.stableSince = 0;
+      this.target_scale = 1.0;
+      this.stable_since = 0;
     }
 
-    this.balloonY += this.balloonVy;
-    this.balloonY = Math.max(0.05, Math.min(0.95, this.balloonY));
+    this.balloon_y += this.balloon_vy;
+    this.balloon_y = Math.max(0.05, Math.min(0.95, this.balloon_y));
   }
 
   draw() {
@@ -142,7 +143,7 @@ export class VocaTone {
 
   drawBalloon(ctx, w, h) {
     const cx = w / 2;
-    const by = this.balloonY * h;
+    const by = this.balloon_y * h;
     const baseR = Math.min(w, h) * 0.08;
     const r = baseR * this.scale;
 
@@ -183,15 +184,15 @@ export class VocaTone {
 
   setFlash(type) {
     this.clearFlash();
-    this.lastFlash = type;
+    this.last_flash = type;
     this.onFlash(type);
-    this.flashTimer = setTimeout(function () {
+    this.flash_timer = setTimeout(function () {
       this.clearFlash();
     }.bind(this), 600);
   }
 
   clearFlash() {
-    if (this.flashTimer) { clearTimeout(this.flashTimer); this.flashTimer = null; }
-    if (this.lastFlash) { this.onFlash(null); this.lastFlash = null; }
+    if (this.flash_timer) { clearTimeout(this.flash_timer); this.flash_timer = null; }
+    if (this.last_flash) { this.onFlash(null); this.last_flash = null; }
   }
 }
