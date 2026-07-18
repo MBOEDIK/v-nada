@@ -43,11 +43,64 @@ All database fields, configuration objects, and state variables MUST use exact s
 
 ---
 
+## Mathematical Definitions
+
+### Euclidean Distance
+For two points `p` and `q` in 2D landmark space:
+```
+d(p, q) = sqrt((p_x - q_x)^2 + (p_y - q_y)^2)
+```
+
+### Lip Aspect Ratio (LAR)
+Computed from four specific FaceMesh lip landmarks:
+```
+LAR = d(P_top, P_bottom) / d(P_left, P_right)
+```
+Where:
+- `P_top` = FaceMesh landmark index 13 (upper lip)
+- `P_bottom` = FaceMesh landmark index 14 (lower lip)
+- `P_left` = FaceMesh landmark index 78 (left mouth corner)
+- `P_right` = FaceMesh landmark index 308 (right mouth corner)
+
+### Noise Floor Gate
+Audio pitch extraction is SKIPPED when:
+```
+RMS < 0.01
+```
+Where RMS is computed on the `Float32Array` from `getFloat32TimeDomainData()`.
+
+### Fundamental Frequency (f0) via Autocorrelation
+```
+f0 = sampleRate / argmax_lag(correlation)
+```
+Where `correlation` is the normalized time-domain autocorrelation function over lags corresponding to 50-800 Hz range.
+
+---
+
+## Sequential Validation Logic Pipeline
+
+The core orchestration follows this strict sequential gate:
+
+```
+[Process 1] Video Camera Stream
+    ↓
+[Process 1] MediaPipe FaceMesh → Landmark Detection
+    ↓
+[Process 1] Compute LAR = d(top,bottom) / d(left,right)
+    ↓
+[Logic Gate] LAR_actual >= LAR_threshold ?
+    ├── YES → [Process 2] Open Microphone → Web Audio API → Autocorrelation Pitch → Extract f0
+    └── NO  → [Fallback] Lock Microphone → Show Error Visual Screen → Return to Process 1
+```
+
+---
+
 ## UI/UX Constraints
 
 ### Fat-Finger Standards
 All interactive child UI elements MUST respect minimum touch target sizes:
 - **Minimum target**: 60x60 device-independent pixels (dp)
+- Applied to: buttons, touch sliders, toggle zones, interactive feedback areas.
 - Use `min-w-[60px] min-h-[60px]` Tailwind utilities.
 
 ### Color Tokens (WCAG AAA 7:1 Ratio)
@@ -87,32 +140,27 @@ The Proof of Concept implements two core modules, unified under a shared visual 
 
 ---
 
-## Technical Blueprint Index
-
-All technical specifications, UX mappings, visual design systems, and game design documents are maintained in `project_context/technical_blueprint/`. This AI Agent MUST read every file in that directory before writing any code to ensure alignment with the latest specifications.
-
-| Prefix | Domain | Key Files |
-|---|---|---|
-| TECH | Audio Processing, Camera Optimization, Data Architecture | `tech-01` → `tech-04` |
-| UX | Persona, User Journey, Zero-Audio UX, Information Architecture | `ux-01` → `ux-04` |
-| VISUAL | Design System, Overlay Guide, Asset Inventory | `visual-01` → `visual-03` |
-| GAME | VocaTone GDD, Dual-Sense GDD, Visual Feedback, Reward System | `game-01` → `game-04` |
-
----
-
 ## RUNTIME BOUNDARY & CONTEXT LOCK (SPRINT 1)
-1. **Mandatory Context Initialization:** Before receiving, processing, or executing any prompt or command from the user, you MUST explicitly open, read, and parse the `project_context\50_PERCENT_OF_MVP.md` file located in the repository.
-2. **Strict Scope Constraint:** The `project_context\50_PERCENT_OF_MVP.md` document acts as your absolute system boundary. You are strictly forbidden from writing code, generating components, initializing endpoints, or building mechanics that exceed the 50% Proof of Concept (PoC) scope defined in that file.
+1. **Mandatory Context Initialization:** Before receiving, processing, or executing any prompt or command from the user, you MUST explicitly open, read, and parse in order:
+   - `project_context/50_PERCENT_OF_MVP.md` — batasan ruang lingkup 50% PoC
+   - `project_context/SESSION_HANDOVER.md` — status proyek terakhir, branch aktif, task sisa, critical rules
+   - `project_context/ISSUE_DRAFTS.md` — spesifikasi detail tiap task
+2. **Strict Scope Constraint:** The `project_context/50_PERCENT_OF_MVP.md` document acts as your absolute system boundary. You are strictly forbidden from writing code, generating components, initializing endpoints, or building mechanics that exceed the 50% Proof of Concept (PoC) scope defined in that file.
 3. **No Speculative Coding:** If a user instruction implicitly or explicitly requests a feature that belongs to the Full MVP (100% scope) or the Ideal Product scope (such as full Vowel U/E/O integration, IndexedDB analytics historical logging, or advanced asset animations), you must automatically downscale the implementation to match the 50% placeholder/core-engine standards and issue a reminder of this boundary.
+4. **Session Handover:** At the end of every session, you MUST update `project_context/SESSION_HANDOVER.md` with:
+   - Branch aktif dan status remote
+   - Task yang sudah dikerjakan (dengan status ✅/⚠️/❌)
+   - Perubahan file kunci
+   - Bug yang ditemukan dan solusinya
+   - Next steps yang jelas
 
-### 4. Scope Confirmation via PROGRESS.md
-Before executing any user request that involves code generation, file modification, or system implementation, you MUST:
-   - Read `project_context\PROGRESS.md` and explicitly confirm with the user whether their request aligns with the scope defined in that file.
-   - If the user confirms alignment, identify which specific task code (e.g., `A1.1`, `C6.2`, `D10.1`) the request belongs to.
-   - If the user's request falls outside all task codes in PROGRESS.md, reject the request and remind the user of the 50% PoC scope boundary defined in `project_context\50_PERCENT_OF_MVP.md`.
+## COMMIT CONVENTION
+Semua commit message WAJIB menggunakan **Bahasa Indonesia** yang konsisten.
+Format: `<type>: <deskripsi singkat dalam bahasa Indonesia>`
 
-### 5. Auto-Checkmark on Task Completion
-After successfully completing a user-requested task (code generation, file modification, testing, etc.), you MUST:
-   - Locate the corresponding checklist item in `project_context\PROGRESS.md`.
-   - Update the `[ ]` to `[x]` for that specific task code.
-   - Update the summary table at the bottom of PROGRESS.md to reflect the new completion count.
+- `feat:` — fitur baru
+- `fix:` — perbaikan bug
+- `chore:` — tugas teknis (config, dependencies)
+- `refactor:` — perubahan kode tanpa ubah fungsionalitas
+- `docs:` — perubahan dokumentasi
+- `debug:` — tambahan sementara untuk debugging (jangan di-merge ke main)

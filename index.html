@@ -11,54 +11,170 @@
   <title>V-NADA</title>
 </head>
 <body class="font-body bg-bg-light">
-  <div id="app" class="flex flex-col items-center justify-center min-h-screen p-4">
-    <header class="w-full text-center mb-4">
-      <h1 class="font-heading text-2xl font-bold text-primary">V-NADA</h1>
-      <p class="text-sm text-gray-600">Visual Networked Audio & Digital Articulation</p>
-    </header>
+  <div id="app" class="w-full min-h-screen">
 
-    <main class="w-full max-w-lg flex flex-col gap-4">
-      <section id="camera-view" class="relative w-full aspect-square bg-gray-900 rounded-xl overflow-hidden">
-        <video id="camera-feed" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline></video>
-        <canvas id="overlay-canvas" class="absolute inset-0 w-full h-full"></canvas>
-      </section>
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- SCREEN 1 : DASHBOARD                                   -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <section id="screen-dashboard" class="flex flex-col min-h-screen p-4 md:p-6 lg:p-8">
+      <header class="w-full text-center mb-6 md:mb-8 mt-4">
+        <h1 class="font-heading text-3xl md:text-4xl font-bold text-primary">V-NADA</h1>
+        <p class="text-sm text-gray-600 mt-1">Visual Networked Audio &amp; Digital Articulation</p>
+      </header>
 
-      <section id="feedback-panel" class="grid grid-cols-2 gap-3">
-        <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
-          <span class="text-xs font-semibold text-gray-500 uppercase">LAR</span>
-          <span id="lar-display" class="text-lg font-bold text-primary">0.00</span>
+      <div class="flex-1 flex flex-col items-center justify-center gap-6 max-w-md mx-auto w-full">
+        <!-- Card: VocaTone -->
+        <div class="module-card w-full bg-white rounded-2xl shadow-md border border-gray-100 p-6 flex flex-col items-center text-center">
+          <div class="w-16 h-16 rounded-full bg-primary bg-opacity-10 flex items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m-4 0h8m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+          </div>
+          <h2 class="font-heading text-xl font-bold text-primary mb-1">VocaTone</h2>
+          <p class="text-sm text-gray-500 mb-5 leading-relaxed">
+            Latihan kontrol suara dan stabilitas pitch. Cocok untuk melatih pita suara tanpa perlu kamera.
+          </p>
+          <button id="btn-vocatone"
+            class="w-full py-4 bg-primary text-white font-heading font-bold text-lg rounded-xl shadow-md active:scale-95 transition-transform min-w-[60px] min-h-[60px]">
+            Mulai
+          </button>
         </div>
-        <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
-          <span class="text-xs font-semibold text-gray-500 uppercase">Pitch (Hz)</span>
-          <span id="pitch-display" class="text-lg font-bold text-primary">0</span>
-        </div>
-        <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
-          <span class="text-xs font-semibold text-gray-500 uppercase">Accuracy</span>
-          <span id="accuracy-display" class="text-lg font-bold text-success">0%</span>
-        </div>
-        <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
-          <span class="text-xs font-semibold text-gray-500 uppercase">Stars</span>
-          <span id="star-display" class="text-lg font-bold text-warning">&#9733;&#9733;&#9733;</span>
-        </div>
-      </section>
 
-      <section id="controls" class="flex justify-center gap-4">
-        <button id="btn-start" class="px-8 py-4 bg-primary text-white font-heading font-bold text-lg rounded-full shadow-lg active:scale-95 transition-transform min-w-[60px] min-h-[60px]">
-          Start
+        <!-- Card: Dual-Sense -->
+        <div class="module-card w-full bg-white rounded-2xl shadow-md border border-gray-100 p-6 flex flex-col items-center text-center">
+          <div class="w-16 h-16 rounded-full bg-success bg-opacity-10 flex items-center justify-center mb-4">
+            <svg class="w-8 h-8 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h2 class="font-heading text-xl font-bold text-success mb-1">Dual-Sense</h2>
+          <p class="text-sm text-gray-500 mb-5 leading-relaxed">
+            Latihan artikulasi multimodal dengan kamera + audio. Membutuhkan kamera depan untuk deteksi bentuk bibir.
+          </p>
+          <button id="btn-dualsense"
+            class="w-full py-4 bg-success text-white font-heading font-bold text-lg rounded-xl shadow-md active:scale-95 transition-transform min-w-[60px] min-h-[60px]">
+            Mulai
+          </button>
+        </div>
+      </div>
+
+      <footer class="w-full text-center mt-6 mb-2">
+        <p class="text-xs text-gray-400">v-nada &mdash; 100% Client-Side</p>
+      </footer>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- SCREEN 2 : DUAL-SENSE                                 -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <section id="screen-dualsense" class="hidden flex-col min-h-screen bg-bg-light">
+      <div class="flex items-center justify-between px-4 pt-4 pb-2">
+        <button id="btn-back-dualsense"
+          class="flex items-center gap-1 text-primary font-heading font-semibold text-sm min-w-[60px] min-h-[60px] active:scale-95 transition-transform">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Kembali
         </button>
-        <button id="btn-stop" class="px-8 py-4 bg-danger text-white font-heading font-bold text-lg rounded-full shadow-lg active:scale-95 transition-transform min-w-[60px] min-h-[60px]">
-          Stop
-        </button>
-      </section>
+        <span class="font-heading font-bold text-sm text-primary">Dual-Sense</span>
+        <div class="w-20"></div>
+      </div>
 
-      <section id="error-screen" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-danger bg-opacity-90 transition-opacity">
+      <main class="flex-1 flex flex-col gap-4 px-4 pb-4 max-w-lg mx-auto w-full">
+        <section id="camera-view" class="relative w-full aspect-square bg-gray-900 rounded-xl overflow-hidden">
+          <video id="camera-feed" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline></video>
+          <canvas id="overlay-canvas" class="absolute inset-0 w-full h-full"></canvas>
+          <div id="vowel-indicator" class="hidden fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
+            <span class="font-heading font-bold text-black" style="font-size:72pt;">A</span>
+          </div>
+        </section>
+
+        <section id="feedback-panel" class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
+            <span class="text-xs font-semibold text-gray-500 uppercase">LAR</span>
+            <span id="lar-display" class="text-lg font-bold text-primary">0.00</span>
+          </div>
+          <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
+            <span class="text-xs font-semibold text-gray-500 uppercase">Pitch (Hz)</span>
+            <span id="pitch-display" class="text-lg font-bold text-primary">0</span>
+          </div>
+          <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
+            <span class="text-xs font-semibold text-gray-500 uppercase">Accuracy</span>
+            <span id="accuracy-display" class="text-lg font-bold text-success">0%</span>
+          </div>
+          <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
+            <span class="text-xs font-semibold text-gray-500 uppercase">Stars</span>
+            <span id="star-display" class="text-lg font-bold text-warning">&#9733;&#9733;&#9733;</span>
+          </div>
+        </section>
+
+        <section id="controls" class="flex justify-center gap-4">
+          <button id="btn-start"
+            class="px-8 py-4 bg-primary text-white font-heading font-bold text-lg rounded-full shadow-lg active:scale-95 transition-transform min-w-[60px] min-h-[60px]">
+            Start
+          </button>
+          <button id="btn-stop"
+            class="px-8 py-4 bg-danger text-white font-heading font-bold text-lg rounded-full shadow-lg active:scale-95 transition-transform min-w-[60px] min-h-[60px]">
+            Stop
+          </button>
+        </section>
+      </main>
+
+      <section id="error-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-danger bg-opacity-90 opacity-0 pointer-events-none transition-opacity duration-700">
         <div class="text-center text-white p-8">
           <div class="text-6xl mb-4">&#9888;</div>
-          <h2 class="font-heading text-2xl font-bold mb-2">Mouth Closed</h2>
-          <p class="font-body text-lg">Please open your mouth to begin</p>
+          <h2 id="error-title" class="font-heading text-2xl font-bold mb-2">Mouth Closed</h2>
+          <p id="error-message" class="font-body text-lg">Please open your mouth to begin</p>
         </div>
       </section>
-    </main>
+
+      <div id="flash-overlay" class="fixed inset-0 pointer-events-none z-40 opacity-0"></div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- SCREEN 3 : VOCATONE                                   -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <section id="screen-vocatone" class="hidden flex-col min-h-screen bg-bg-light">
+      <div class="flex items-center justify-between px-4 pt-4 pb-2">
+        <button id="btn-back-vocatone"
+          class="flex items-center gap-1 text-primary font-heading font-semibold text-sm min-w-[60px] min-h-[60px] active:scale-95 transition-transform">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Kembali
+        </button>
+        <span class="font-heading font-bold text-sm text-primary">VocaTone</span>
+        <div class="w-20"></div>
+      </div>
+
+      <main class="flex-1 flex flex-col gap-4 px-4 pb-4 max-w-lg mx-auto w-full">
+        <section class="relative w-full aspect-square bg-gray-50 rounded-xl overflow-hidden border border-gray-200">
+          <canvas id="game-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        </section>
+
+        <section class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
+            <span class="text-xs font-semibold text-gray-500 uppercase">Pitch (Hz)</span>
+            <span id="voc-pitch-display" class="text-lg font-bold text-primary">--</span>
+          </div>
+          <div class="flex flex-col items-center p-3 bg-gray-50 rounded-lg min-h-[60px]">
+            <span class="text-xs font-semibold text-gray-500 uppercase">Status</span>
+            <span id="voc-status-display" class="text-lg font-bold text-muted">Idle</span>
+          </div>
+        </section>
+
+        <section class="flex justify-center gap-4">
+          <button id="btn-voc-start"
+            class="px-8 py-4 bg-primary text-white font-heading font-bold text-lg rounded-full shadow-lg active:scale-95 transition-transform min-w-[60px] min-h-[60px]">
+            Mulai
+          </button>
+          <button id="btn-voc-stop"
+            class="px-8 py-4 bg-danger text-white font-heading font-bold text-lg rounded-full shadow-lg active:scale-95 transition-transform min-w-[60px] min-h-[60px]">
+            Stop
+          </button>
+        </section>
+      </main>
+    </section>
+
   </div>
 
   <script type="module" src="/src/main.js"></script>

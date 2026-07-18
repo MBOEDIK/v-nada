@@ -17,6 +17,7 @@
     "@mediapipe/face_mesh": "^0.4.1633547292"
   },
   "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.57.1",
     "eslint-plugin-vnada": "file:./tools/eslint-plugin-vnada",
