@@ -29,7 +29,7 @@ const FFT_SIZE = 2048;
  * Declared as `export let` so future IndexedDB user profiles can override
  * the default value per-user (e.g. quieter environments \u2192 lower threshold).
  */
-export let NOISE_FLOOR_RMS = 0.025; // eslint-disable-line prefer-const
+export let NOISE_FLOOR_RMS = 0.01; // eslint-disable-line prefer-const
 
 /** Lowest pitch frequency (Hz) the autocorrelation search covers. */
 const MIN_PITCH_HZ = 50;

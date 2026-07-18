@@ -73,7 +73,6 @@ let isF0Stable = false;
 let isF0Shrill = false;
 let flashActive = false;
 let flashTimeout = null;
-let faceEverDetected = false;
 let mouthData = null;
 let silhouetteRAF = null;
 let overlayCtx = null;
@@ -351,7 +350,6 @@ gatekeeper.onEnter(STATES.IDLE, () => {
 
 function onFaceLandmarks(landmarks) {
   if (!sessionActive || !landmarks) { return; }
-  faceEverDetected = true;
 
   lastFaceTime = performance.now();
   lastLar = computeLipAspectRatio(landmarks);
@@ -492,7 +490,6 @@ function onFaceLandmarks(landmarks) {
 async function startDualSenseSession() {
   sessionActive = true;
   restingMouthWidth = Infinity;
-  faceEverDetected = false;
   mouthData = null;
 
   showError(false);
