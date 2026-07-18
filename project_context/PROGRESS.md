@@ -51,25 +51,25 @@
 
 ### C8 — Logika Validasi /a/ dan /i/ (3 task)
 - [x] **C8.1** — Tentukan Threshold LAR
-- [ ] **C8.2** — Validasi /a/
-- [ ] **C8.3** — Validasi /i/
+- [x] **C8.2** — Validasi /a/ (via GateKeeper LAR_CHECK mode 'A')
+- [x] **C8.3** — Validasi /i/ (via GateKeeper LAR_CHECK mode 'I')
 
 ### C9 — Instant Fallback (2 task)
-- [ ] **C9.1** — Monitor LAR Loop
-- [ ] **C9.2** — Reset State + Visual Error
+- [x] **C9.1** — Monitor LAR Loop (onFaceLandmarks continuous LAR monitoring)
+- [x] **C9.2** — Reset State + Visual Error (triggerFallback → flash-error + silhouette merah)
 
 ---
 
 ## D. UI/UX Zero-Audio Interface (2 fitur → 5 task)
 
 ### D10 — Binary Visual Feedback Matrix (3 task)
-- [ ] **D10.1** — Flash Hijau (Success)
-- [ ] **D10.2** — Flash Kuning (Hypernasal)
-- [ ] **D10.3** — Flash Merah (Error/Idle)
+- [x] **D10.1** — Flash Hijau (flash-success via setFlash)
+- [x] **D10.2** — Flash Kuning (flash-warning via setFlash, f₀ > f_max)
+- [x] **D10.3** — Flash Merah (flash-error via setFlash, no audio input / wrong mouth)
 
 ### D11 — Mouth Silhouette Calibration (2 task)
-- [ ] **D11.1** — Render Oval Transparan
-- [ ] **D11.2** — Posisi Oval Ikut Wajah
+- [x] **D11.1** — Render Oval Transparan (drawSilhouette dengan ellipse dashed)
+- [ ] **D11.2** — Posisi Oval Ikut Wajah (masih di tengah canvas, belum ikut landmark midpoint)
 
 ---
 
@@ -79,6 +79,6 @@
 |----------|-------|------|---------|
 | A — Core Tech | 2 | 6 | 5 / 6 |
 | B — VocaTone | 3 | 8 | 0 / 8 |
-| C — Dual-Sense | 4 | 10 | 5 / 10 |
-| D — UI/UX | 2 | 5 | 0 / 5 |
-| **Total** | **11** | **29** | **10 / 29** |
+| C — Dual-Sense | 4 | 10 | 9 / 10 |
+| D — UI/UX | 2 | 5 | 4 / 5 |
+| **Total** | **11** | **29** | **18 / 29** |
