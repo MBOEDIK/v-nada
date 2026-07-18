@@ -145,4 +145,15 @@ export function stopCamera() {
   onNoFaceCallback = null;
 }
 
+export function computeMouthMidpoint(landmarks) {
+  const pTop = landmarks[FACEMESH_LIPS.top];
+  const pBottom = landmarks[FACEMESH_LIPS.bottom];
+  const pLeft = landmarks[FACEMESH_LIPS.left];
+  const pRight = landmarks[FACEMESH_LIPS.right];
+  return {
+    x: (pTop.x + pBottom.x + pLeft.x + pRight.x) / 4,
+    y: (pTop.y + pBottom.y + pLeft.y + pRight.y) / 4,
+  };
+}
+
 export { FACEMESH_LIPS, throttleFrame };

@@ -69,7 +69,7 @@
 
 ### D11 — Mouth Silhouette Calibration (2 task)
 - [x] **D11.1** — Render Oval Transparan (drawSilhouette dengan ellipse dashed)
-- [ ] **D11.2** — Posisi Oval Ikut Wajah (masih di tengah canvas, belum ikut landmark midpoint)
+- [x] **D11.2** — Posisi Oval Ikut Wajah (mouth midpoint dari landmark, dikonversi ke pixel canvas)
 
 ---
 
@@ -80,5 +80,5 @@
 | A — Core Tech | 2 | 6 | 6 / 6 |
 | B — VocaTone | 3 | 8 | 8 / 8 |
 | C — Dual-Sense | 4 | 10 | 10 / 10 |
-| D — UI/UX | 2 | 5 | 4 / 5 |
-| **Total** | **11** | **29** | **28 / 29** |
+| D — UI/UX | 2 | 5 | 5 / 5 |
+| **Total** | **11** | **29** | **29 / 29** |

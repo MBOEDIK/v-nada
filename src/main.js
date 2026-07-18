@@ -1,6 +1,6 @@
 import './styles/main.css';
 import { GateKeeper, STATES } from './utils/gatekeeper.js';
-import { initCamera, stopCamera, computeLipAspectRatio } from './utils/vision.js';
+import { initCamera, stopCamera, computeLipAspectRatio, computeMouthMidpoint } from './utils/vision.js';
 import { initAudioStream, closeAudioStream, extractPitch, calibrateAmbientNoise } from './utils/audio.js';
 import { getProfile, saveProfile, getDefaultProfile } from './utils/db.js';
 import { lar_threshold, f_max } from './utils/constants.js';
@@ -104,13 +104,15 @@ function drawCrosshair(lar) {
 }
 
 let silhouette_pulse = 0;
+let mouth_mid_x = 0.5;
+let mouth_mid_y = 0.5;
 
 function drawSilhouette(state) {
   if (!canvas_ctx) { return; }
   const w = overlayCanvas.width;
   const h = overlayCanvas.height;
-  const cx = w / 2;
-  const cy = h / 2;
+  const cx = mouth_mid_x * w;
+  const cy = mouth_mid_y * h;
   const pad = 48;
   const rx = Math.max(20, Math.min(w * 0.25, (w - pad * 2) / 2));
   const ry = Math.max(14, Math.min(h * 0.15, (h - pad * 2) / 2));
@@ -403,6 +405,9 @@ function onFaceLandmarks(landmarks) {
   if (gatekeeper.getState() === STATES.IDLE) { return; }
   const lar = computeLipAspectRatio(landmarks);
   updateLar(lar);
+  const mid = computeMouthMidpoint(landmarks);
+  mouth_mid_x = mid.x;
+  mouth_mid_y = mid.y;
   const state = gatekeeper.getState();
 
   if (state === STATES.CAMERA_ACTIVE) {
@@ -504,6 +509,8 @@ async function startSession() {
   stable_pitch_count = 0;
   fallback_sil_state = 'searching';
   silhouette_pulse = 0;
+  mouth_mid_x = 0.5;
+  mouth_mid_y = 0.5;
   showError(false);
   face_paused = false;
   updateLar(0);
@@ -549,6 +556,8 @@ async function stopSession() {
   stopCrosshair();
   show_arrow = false;
   fallback_sil_state = 'searching';
+  mouth_mid_x = 0.5;
+  mouth_mid_y = 0.5;
   stable_pitch_count = 0;
   clearCheckmark();
   showError(false);

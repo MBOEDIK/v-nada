@@ -112,12 +112,12 @@ describe('Mouth Silhouette (drawSilhouette)', () => {
   let pulse;
   let calls;
 
-  function drawSilhouette(state) {
+  function drawSilhouette(state, mx, my) {
     if (!ctx) { return; }
     const w = canvas.width;
     const h = canvas.height;
-    const cx = w / 2;
-    const cy = h / 2;
+    const cx = (mx !== undefined && mx !== null) ? mx * w : w / 2;
+    const cy = (my !== undefined && my !== null) ? my * h : h / 2;
     const rx = Math.max(20, w * 0.25);
     const ry = Math.max(14, h * 0.15);
     let color = '#F8FAFC';
