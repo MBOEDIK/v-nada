@@ -1,77 +1,55 @@
-# CHECKPOINT — V-NADA Refactor Sprint 1 (Fase B)
+# CHECKPOINT — V-NADA Refactor Sprint 1 (Fase C — DualSense)
 
-**Branch saat ini:** `refactor/vocatone`
-**Base:** `origin/develop` + cherry-pick `54a5b07` `02522f3`
-**Total Progress:** 10/29 PROGRESS.md tasks | 49/136 refactor-todolist items ✅ (+19 baru fase B)
+**Branch saat ini:** `refactor/dualsense`
+**Base:** `origin/develop` + cherry-pick `54a5b07` `02522f3` `d00555d`
+**Total Progress:** 10/29 PROGRESS.md tasks | 109/136 refactor-todolist items ✅
 
 ---
 
 ## ⚠️ ATURAN BRANCH — BACA INI DAHULU SEBELUM BEKERJA ⚠️
 
-**SETIAP FASE HARUS DI BRANCH MASING-MASING. JANGAN CAMPUR.**
+**SETIAP FASE HARUS DI BRANCH MASSING-MASSING. JANGAN CAMPUR.**
 
 | Fase | Isi | Branch Wajib | Base Branch | Status |
 |------|-----|-------------|-------------|--------|
 | A1 | 🔴 Shared Foundation | `refactor/shared-foundation` | `develop` | ✅ Selesai |
 | A2 | 🟡 Shared Foundation | `refactor/shared-foundation` | `develop` | ✅ Selesai |
-| A3 | 🟢 Shared Foundation | `refactor/shared-A3` | `develop` | ✅ Selesai |
-| B | VocaTone (22 item) | `refactor/vocatone` | `develop` | ✅ **Selesai** |
-| C | DualSense (73 item) | `refactor/dualsense` | `develop` | ⏳ Belum |
+| A3 | 🟢 Shared Foundation (19 item) | `refactor/shared-A3` | `develop` | ✅ **Selesai** |
+| B | VocaTone (22 item) | `refactor/vocatone` | `develop` | ✅ Selesai |
+| C | DualSense (73 item) | `refactor/dualsense` | `develop` + A1+A2+A3 | ✅ **Selesai (62/73 item)** |
 
 ---
 
-## ✅ SUDAH SELESAI (49 item — 19 baru di B)
+## ✅ SUDAH SELESAI
 
-### 🔴 Kritis (A1) — 4 item
-C01, C02, C23, C24 ✅
+### Fase C — DualSense 🟦 Batch 1+2 (9 item)
 
-### 🟡 Sedang (A2) — 11 item
-T11-T14, T26-T30, G09, U28, S34 ✅
+| Item | Deskripsi | File |
+|------|-----------|------|
+| S40 | Red flash (`flash-error`) saat MIC_OPEN tanpa input suara (pitch === 0) | `main.js` (startPitchPolling) |
+| G04 | Wrong mouth → `flash-error` + siluet merah (`out_of_bounds`) 600ms | `main.js` (triggerFallback,drawSilhouette) |
+| T05/S29 | `closeAudioGate()` async + `await closeAudioStream()` | `main.js` (closeAudioGate) |
+| S05 | SESSION_ACTIVE live state: MIC_OPEN → SESSION_ACTIVE setelah 5 frame pitch stabil | `main.js` (startPitchPolling) |
+| U07 | Siluet Searching state sine-wave pulsing (alpha 0.2-0.5) | `main.js` (drawSilhouette) |
+| S44 | Canvas sizing responsif via ResizeObserver | `main.js` (startSession,resizeCanvases) |
+| S36 | Accuracy display + star rating — hapus (scope creep) | `index.html`, `main.js` |
+| T19 | Camera fallback 480p→360p dengan cleanup + retry | `vision.js` (initCamera) |
+| S26 | `onEnter(LAR_CHECK)` init — reset outOfThresholdSince + stablePitchCount | `main.js` |
 
-### 🟢 Ringan (A3) — 15 item
-T16, G07, U03-U04, U06, U12, U14, U20-U22, U26-U27, U29-U31, C05, C19, C21, C22 ✅
+### Shared Foundation via Cherry-pick (A1+A2+A3)
 
-### 🔴🟡🟢 VocaTone (B) — 19 item ✅
-
-| Item | Status | Keterangan |
-|------|--------|------------|
-| T02 | ✅ | `lar_threshold.high` dari constants.js |
-| T09 | ✅ | Octave correction (A1) |
-| T21 | ✅ | `lar_threshold` schema object dari constants |
-| T25 | ✅ | `f_min`/`f_max` single source (A1) |
-| T31 | ✅ | Mic error user-facing via showError() |
-| G01 | ✅ | Zero camera/FaceMesh — audio-only |
-| G06 | ✅ | Stability timer STABILITY_MS = 1000 (1s) |
-| G08 | ✅ | drawBackground() fill #F8FAFC |
-| G13 | ✅ | Balloon bright blue #60A5FA + gradient |
-| G14 | ✅ | Smooth acceleration (FALL_ACCEL + RISE_SPEED) |
-| S03 | ✅ | Balloon hover center (Y 0.25-0.75) saat stabil |
-| S19 | ✅ | Mic error try/catch → onError callback |
-| S25 | ✅ | No camera/FaceMesh dependency |
-| S28 | ✅ | CSS @keyframes blink-success/blink-warning |
-| S35 | ✅ | constants.js import (A1) |
-| S45 | ✅ | Flash merah (A1) |
-| U01 | ✅ | ctx.font = 'bold 72pt Montserrat' |
-| U02 | ✅ | Mic denied → user-facing error |
-| U05/U25 | ✅ | drawSilhouette() dashed oval guide |
-| U11/U23 | ✅ | targetScale = 1.2 saat voice/rising |
-| S35 | ✅ | constants.js import |
+Semua item A1 (4 🔴), A2 (7 🟡), A3 (19 🟢🟡) shared foundation sudah di-cherry-pick ke branch ini dari `refactor/shared-foundation` (54a5b07, 02522f3) dan `refactor/shared-A3` (d00555d).
 
 ---
 
-## ⏳ BELUM — Fase C (DualSense, 73 item)
+## ⏳ MASIH BELUM — Sisa dualsense (11 item)
 
-**Branch wajib:** `refactor/dualsense`
-**Base:** `develop` + cherry-pick `54a5b07` `02522f3`
+| Prioritas | Item | Sifat |
+|-----------|------|-------|
+| 🟡 Sedang | G02 (low amplitude → #F8FAFC), G05 (face loss pause), G10 (character gate), C03 (snake_case), C20 (cooldown) | Non-kritis, bisa ditunda |
+| 🟢 Ringan | U08 (shake anim), U13 (mic denied illust), U18 (48dp padding), U19 (CSS stroke transition), C04 (basicSsl), S24 (RAF 60Hz) | Wajar PoC / tidak urgent |
 
-### 🔴 Kritis (4)
-T03, S04, S09, S12
-
-### 🟡 Sedang (42)
-Lihat `project_context/refactor_notes/refactor-todolist.md`
-
-### 🟢 Ringan (15)
-Lihat `project_context/refactor_notes/refactor-todolist.md`
+Lihat `project_context/refactor_notes/refactor-todolist.md` untuk detail per-item.
 
 ---
 
@@ -80,14 +58,13 @@ Lihat `project_context/refactor_notes/refactor-todolist.md`
 | File | Fase | Perubahan |
 |------|------|-----------|
 | `src/utils/gatekeeper.js` | A1 | GateKeeper class + STATES enum |
-| `src/utils/vision.js` | A1+A2 | 2D Euclidean, FPS 20, object API, stopCamera |
-| `src/utils/audio.js` | A1+A2+B | Resume, try/catch, Float64Array, octave, 44.1kHz, RMS, connect destination (T16) |
+| `src/utils/vision.js` | A1+A2+FaseC | 2D Euclidean, FPS 20, object API, stopCamera, camera fallback 480p→360p |
+| `src/utils/audio.js` | A1+A2+A3 | Resume, try/catch, Float64Array, octave, 44.1kHz, RMS, connect destination |
 | `src/utils/db.js` | A2 | `getDefaultProfile()` |
 | `src/utils/constants.js` | — | Tidak berubah |
-| `src/games/vocatone.js` | B | **BARU** — VocaTone game class, audio-only balloon game |
-| `src/main.js` | B | Simplified for VocaTone, no camera, wires VocaTone class |
-| `src/styles/main.css` | A3+B | flash-* classes, blink keyframes |
-| `index.html` | B | Restructured for VocaTone (no camera, vowel "A") |
+| `src/main.js` | A1+A2+A3+FaseC | State machine, crosshair, flash, profile, module selection, back button, no face msg, haptic, checkmark, orbit pulse, red arrow, silhouette pulsing, SESSION_ACTIVE, flash-error no audio, closeAudioGate async, ResizeObserver |
+| `src/styles/main.css` | A1+A3 | flash-* classes, camera mirror, camera border, error transition, animations |
+| `index.html` | A3+FaseC | Module selection, back button, no face msg, checkmark canvas, gap-4, remove accuracy+stars |
 | `vite.config.js` | A2 | Caching `.binarypb/.data`, StaleWhileRevalidate |
 
 ---
@@ -102,4 +79,4 @@ Lihat `project_context/refactor_notes/refactor-todolist.md`
 
 ---
 
-*Checkpoint dibuat: 18 Jul 2026 | Branch final: refactor/vocatone*
+*Checkpoint dibuat: 18 Jul 2026 | Branch final: refactor/dualsense*
