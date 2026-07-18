@@ -76,22 +76,49 @@ export function initCamera({ videoElement, onFace, onNoFace } = {}) {
     }
   });
 
-  const camera = new Camera(videoElement, {
-    onFrame: async function () {
-      try {
-        await faceMesh.send({ image: videoElement });
-      } catch (_) {
-        if (onNoFaceCallback) { onNoFaceCallback(); }
-      }
-    },
-    width: 480,
-    height: 480,
-  });
-  cameraInstance = camera;
-
   startNoFacePoll();
 
-  return camera;
+  const resolutions = [
+    { width: 480, height: 480 },
+    { width: 360, height: 360 },
+  ];
+  let currentResIndex = 0;
+  let currentCamera = null;
+
+  async function tryStart(resIndex) {
+    if (currentCamera) {
+      try { currentCamera.stop(); } catch (_) { /* ignore */ }
+      currentCamera = null;
+    }
+    const res = resolutions[resIndex];
+    const cam = new Camera(videoElement, {
+      onFrame: async function () {
+        try {
+          await faceMesh.send({ image: videoElement });
+        } catch (_) {
+          if (onNoFaceCallback) { onNoFaceCallback(); }
+        }
+      },
+      width: res.width,
+      height: res.height,
+    });
+    currentCamera = cam;
+    cameraInstance = cam;
+    try {
+      await cam.start();
+    } catch (err) {
+      if (resIndex < resolutions.length - 1) {
+        return tryStart(resIndex + 1);
+      }
+      throw err;
+    }
+  }
+
+  const controller = {
+    start: function () { return tryStart(0); },
+  };
+
+  return controller;
 }
 
 export function stopCamera() {
