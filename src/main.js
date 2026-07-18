@@ -12,8 +12,6 @@ const overlayCanvas = $('overlay-canvas');
 const checkmarkCanvas = $('checkmark-canvas');
 const larDisplay = $('lar-display');
 const pitchDisplay = $('pitch-display');
-const accuracyDisplay = $('accuracy-display');
-const starDisplay = $('star-display');
 const errorScreen = $('error-screen');
 const btnStart = $('btn-start');
 const btnStop = $('btn-stop');
@@ -29,6 +27,8 @@ let audioInitialized = false;
 let audioInitializing = false;
 let outOfThresholdSince = 0;
 const LAR_DEBOUNCE_MS = 300;
+let stablePitchCount = 0;
+const STABLE_PITCH_MIN = 5;
 
 const gatekeeper = new GateKeeper();
 let cameraCtrl = null;
@@ -39,15 +39,10 @@ let crosshairAnimId = null;
 let canvasCtx = null;
 let checkmarkCtx = null;
 let showArrow = false;
+let resizeObserver = null;
 
 function updateLar(value) { larDisplay.textContent = value.toFixed(2); }
 function updatePitch(value) { pitchDisplay.textContent = value > 0 ? `${Math.round(value)} Hz` : '--'; }
-function updateAccuracy(value) { accuracyDisplay.textContent = `${Math.round(value * 100)}%`; }
-function updateStars(count) {
-  const filled = '\u2605'.repeat(count);
-  const empty = '\u2606'.repeat(3 - count);
-  starDisplay.textContent = filled + empty;
-}
 function showError(show, title, msg) {
   if (!show) { errorScreen.classList.add('hidden'); return; }
   errorScreen.classList.remove('hidden');
@@ -101,6 +96,8 @@ function drawCrosshair(lar) {
   canvasCtx.setLineDash([]);
 }
 
+let silhouettePulse = 0;
+
 function drawSilhouette(state) {
   if (!canvasCtx) { return; }
   const w = overlayCanvas.width;
@@ -112,33 +109,40 @@ function drawSilhouette(state) {
 
   let color;
   let lineWidth;
+  let alpha;
   switch (state) {
     case 'searching':
       color = '#F8FAFC';
       lineWidth = 2;
+      alpha = 0.2 + Math.sin(silhouettePulse) * 0.15;
       break;
     case 'locked':
       color = '#22C55E';
       lineWidth = 3;
+      alpha = 0.3;
       break;
     case 'out_of_bounds':
       color = '#EF4444';
       lineWidth = 2;
+      alpha = 0.3 + Math.sin(silhouettePulse * 2) * 0.15;
       break;
     default:
       color = '#F8FAFC';
       lineWidth = 2;
+      alpha = 0.3;
   }
 
   canvasCtx.save();
   canvasCtx.strokeStyle = color;
   canvasCtx.lineWidth = lineWidth;
   canvasCtx.setLineDash([6, 4]);
-  canvasCtx.globalAlpha = 0.3;
+  canvasCtx.globalAlpha = Math.max(0.1, Math.min(0.5, alpha));
   canvasCtx.beginPath();
   canvasCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
   canvasCtx.stroke();
   canvasCtx.restore();
+
+  silhouettePulse += 0.04;
 }
 
 let checkmarkPlaying = false;
@@ -208,6 +212,7 @@ function startCrosshair() {
     let silState = 'searching';
     if (state === STATES.LAR_CHECK) { silState = 'searching'; }
     else if (state === STATES.MIC_OPEN || state === STATES.SESSION_ACTIVE) { silState = 'locked'; }
+    else if (state === STATES.CAMERA_ACTIVE && fallbackSilState === 'out_of_bounds') { silState = 'out_of_bounds'; }
     drawSilhouette(silState);
 
     drawCrosshair(state === STATES.MIC_OPEN || state === STATES.SESSION_ACTIVE ? 0.5 : 0.2);
@@ -264,17 +269,31 @@ function stopCrosshair() {
 
 function startPitchPolling() {
   stopPitchPolling();
+  stablePitchCount = 0;
   pitchPollId = setInterval(function () {
-    if (gatekeeper.getState() !== STATES.MIC_OPEN && gatekeeper.getState() !== STATES.SESSION_ACTIVE) { return; }
+    const cur = gatekeeper.getState();
+    if (cur !== STATES.MIC_OPEN && cur !== STATES.SESSION_ACTIVE) { return; }
     const pitch = extractPitch();
     updatePitch(pitch);
-    if (pitch > 0) {
-      if (pitch > f_max) {
-        setFlash('flash-warning');
-      } else {
-        setFlash('flash-success');
-        drawCheckmark();
+    if (pitch > 0 && pitch <= f_max) {
+      stablePitchCount++;
+      if (cur === STATES.MIC_OPEN && stablePitchCount >= STABLE_PITCH_MIN) {
+        gatekeeper.transitionTo(STATES.SESSION_ACTIVE, { mode: gatekeeper.getMode() });
       }
+      setFlash('flash-success');
+      if (cur !== STATES.SESSION_ACTIVE) { drawCheckmark(); }
+    } else if (pitch > f_max) {
+      stablePitchCount = 0;
+      if (cur === STATES.SESSION_ACTIVE) {
+        gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: gatekeeper.getMode() });
+      }
+      setFlash('flash-warning');
+    } else {
+      stablePitchCount = 0;
+      if (cur === STATES.SESSION_ACTIVE) {
+        gatekeeper.transitionTo(STATES.MIC_OPEN, { mode: gatekeeper.getMode() });
+      }
+      setFlash('flash-error');
     }
   }, 100);
 }
@@ -298,17 +317,15 @@ async function openAudioGate() {
   }
 }
 
-function closeAudioGate() {
+async function closeAudioGate() {
   audioInitialized = false;
   audioInitializing = false;
-  closeAudioStream();
+  await closeAudioStream();
 }
 
 gatekeeper.onEnter(STATES.CAMERA_ACTIVE, function () {
   showError(false);
   setFlash(null);
-  updateAccuracy(0);
-  updateStars(0);
   startCrosshair();
   noFaceMsg.classList.remove('hidden');
   showArrow = false;
@@ -316,6 +333,7 @@ gatekeeper.onEnter(STATES.CAMERA_ACTIVE, function () {
 
 gatekeeper.onEnter(STATES.LAR_CHECK, function () {
   outOfThresholdSince = 0;
+  stablePitchCount = 0;
 });
 
 gatekeeper.onEnter(STATES.MIC_OPEN, function () {
@@ -332,24 +350,32 @@ gatekeeper.onExit(STATES.MIC_OPEN, function () {
 });
 
 gatekeeper.onEnter(STATES.SESSION_ACTIVE, function () {
+  showHaptic(true);
+  drawCheckmark();
 });
 
 gatekeeper.onExit(STATES.SESSION_ACTIVE, function () {
+  clearCheckmark();
 });
 
 gatekeeper.onEnter(STATES.IDLE, function () {
   outOfThresholdSince = 0;
-  closeAudioGate();
+  audioInitialized = false;
+  audioInitializing = false;
   stopPitchPolling();
   setFlash(null);
   stopCrosshair();
   clearCheckmark();
 });
 
+let fallbackSilState = 'searching';
+
 function triggerFallback() {
   outOfThresholdSince = 0;
   gatekeeper.fallbackTo(STATES.CAMERA_ACTIVE, { mode: null });
-  setFlash('flash-idle');
+  setFlash('flash-error');
+  fallbackSilState = 'out_of_bounds';
+  setTimeout(function () { fallbackSilState = 'searching'; }, 600);
 }
 
 function onFaceLandmarks(landmarks) {
@@ -392,7 +418,9 @@ function onNoFace() {
   if (gatekeeper.getState() === STATES.IDLE) { return; }
   const state = gatekeeper.getState();
   if (state === STATES.MIC_OPEN || state === STATES.SESSION_ACTIVE) {
-    closeAudioGate();
+    audioInitialized = false;
+    audioInitializing = false;
+    closeAudioStream();
     stopPitchPolling();
   }
   gatekeeper.fallbackTo(STATES.CAMERA_ACTIVE, { mode: null });
@@ -427,24 +455,31 @@ function leaveModuleView() {
   stopSession();
 }
 
+function resizeCanvases() {
+  overlayCanvas.width = cameraFeed.clientWidth;
+  overlayCanvas.height = cameraFeed.clientHeight;
+  checkmarkCanvas.width = cameraFeed.clientWidth;
+  checkmarkCanvas.height = cameraFeed.clientHeight;
+}
+
 async function startSession() {
   if (gatekeeper.getState() !== STATES.IDLE) { return; }
   stopCamera();
   audioInitialized = false;
   audioInitializing = false;
   outOfThresholdSince = 0;
+  stablePitchCount = 0;
+  fallbackSilState = 'searching';
+  silhouettePulse = 0;
   showError(false);
   updateLar(0);
   updatePitch(0);
-  updateAccuracy(0);
-  updateStars(0);
   setFlash(null);
   noFaceMsg.classList.add('hidden');
-  overlayCanvas.width = cameraFeed.clientWidth;
-  overlayCanvas.height = cameraFeed.clientHeight;
-  checkmarkCanvas.width = cameraFeed.clientWidth;
-  checkmarkCanvas.height = cameraFeed.clientHeight;
+  resizeCanvases();
   checkmarkCtx = checkmarkCanvas.getContext('2d');
+  resizeObserver = new ResizeObserver(function () { resizeCanvases(); });
+  resizeObserver.observe(cameraFeed);
 
   const profile = await getProfile('default_user');
   if (!profile) {
@@ -467,23 +502,25 @@ async function startSession() {
   }
 }
 
-function stopSession() {
+async function stopSession() {
   if (gatekeeper.getState() === STATES.IDLE) { return; }
-  gatekeeper.reset();
-  closeAudioGate();
   stopPitchPolling();
+  gatekeeper.reset();
+  await closeAudioGate();
   stopCamera();
   cameraCtrl = null;
   updateLar(0);
   updatePitch(0);
-  updateAccuracy(0);
   setFlash(null);
   stopCrosshair();
   showArrow = false;
+  fallbackSilState = 'searching';
+  stablePitchCount = 0;
   clearCheckmark();
   showError(false);
   noFaceMsg.classList.add('hidden');
   checkmarkCanvas.classList.add('hidden');
+  if (resizeObserver) { resizeObserver.disconnect(); resizeObserver = null; }
 }
 
 btnVocatone.addEventListener('click', function () {
