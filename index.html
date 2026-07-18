@@ -21,6 +21,7 @@
       <section id="camera-view" class="relative w-full aspect-square bg-gray-900 rounded-xl overflow-hidden">
         <video id="camera-feed" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline></video>
         <canvas id="overlay-canvas" class="absolute inset-0 w-full h-full"></canvas>
+        <canvas id="game-canvas" class="absolute inset-0 w-full h-full hidden pointer-events-none"></canvas>
         <div id="vowel-indicator" class="hidden fixed inset-0 z-[60] flex items-center justify-center pointer-events-none">
           <span class="font-heading font-bold text-black" style="font-size:72pt;">A</span>
         </div>
@@ -55,7 +56,7 @@
         </button>
       </section>
 
-        <section id="error-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-danger bg-opacity-90 opacity-0 pointer-events-none transition-opacity duration-500">
+      <section id="error-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-danger bg-opacity-90 opacity-0 pointer-events-none transition-opacity duration-700">
         <div class="text-center text-white p-8">
           <div class="text-6xl mb-4">&#9888;</div>
           <h2 id="error-title" class="font-heading text-2xl font-bold mb-2">Mouth Closed</h2>

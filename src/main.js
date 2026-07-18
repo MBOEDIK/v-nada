@@ -51,7 +51,9 @@ function updateLar(value) {
 }
 
 function updatePitch(value) {
-  pitchDisplay.textContent = value > 0 ? `${Math.round(value)} Hz` : '--';
+  pitchDisplay.textContent = (value !== null && value > 0)
+    ? `${Math.round(value)} Hz`
+    : '--';
 }
 
 function updateAccuracy(value) {
@@ -68,8 +70,8 @@ function showError(show, title, message) {
   errorScreen.classList.toggle('opacity-100', show);
   errorScreen.classList.toggle('pointer-events-auto', show);
   if (show) {
-    if (title) {errorTitle.textContent = title;}
-    if (message) {errorMessage.textContent = message;}
+    if (title) { errorTitle.textContent = title; }
+    if (message) { errorMessage.textContent = message; }
   }
 }
 
@@ -101,7 +103,7 @@ async function preGrantAudioPermission() {
 }
 
 async function openAudioGate() {
-  if (audioInitialized) {return;}
+  if (audioInitialized) { return; }
   try {
     await initAudioStream();
     audioInitialized = true;
@@ -111,7 +113,7 @@ async function openAudioGate() {
 }
 
 function closeAudioGate() {
-  if (!audioInitialized) {return;}
+  if (!audioInitialized) { return; }
   closeAudioStream();
   audioInitialized = false;
   updatePitch(0);
@@ -135,7 +137,7 @@ function startPitchPolling() {
       isF0InRange = false;
       isF0Stable = false;
       stableCount = 0;
-      accuracyDisplay.textContent = 'SHRIILL';
+      accuracyDisplay.textContent = 'SHRILL';
       accuracyDisplay.style.color = '#EAB308';
     } else if (pitch >= f_min) {
       isF0Shrill = false;
@@ -164,6 +166,29 @@ function stopPitchPolling() {
   }
 }
 
+function clearAllFlash() {
+  if (!flashOverlay) { return; }
+  flashOverlay.classList.remove('flash-success', 'flash-warning', 'flash-error', 'flash-idle');
+  if (flashTimeout) {
+    clearTimeout(flashTimeout);
+    flashTimeout = null;
+  }
+  flashActive = false;
+}
+
+function triggerFlash(type) {
+  if (flashActive) { return; }
+  if (!flashOverlay) { return; }
+  flashActive = true;
+  const cls = type === 'warning' ? 'flash-warning' : 'flash-success';
+  flashOverlay.classList.add(cls);
+  flashTimeout = setTimeout(() => {
+    flashOverlay.classList.remove(cls);
+    flashActive = false;
+    flashTimeout = null;
+  }, 500);
+}
+
 function triggerFallback(mode) {
   const title = mode === 'A' ? 'Mouth Closed' : 'Mouth Open';
   const message = mode === 'A'
@@ -179,9 +204,7 @@ function triggerFallback(mode) {
   fallbackMode = mode;
   larValidSince = 0;
 
-  if (errorHideTimer) {
-    clearTimeout(errorHideTimer);
-  }
+  if (errorHideTimer) { clearTimeout(errorHideTimer); }
   errorHideTimer = setTimeout(() => {
     if (fallbackMode) {
       showError(false);
@@ -191,33 +214,11 @@ function triggerFallback(mode) {
   }, 2000);
 }
 
-function clearAllFlash() {
-  if (!flashOverlay) {return;}
-  flashOverlay.classList.remove('flash-success', 'flash-warning', 'flash-error', 'flash-idle');
-  if (flashTimeout) {
-    clearTimeout(flashTimeout);
-    flashTimeout = null;
-  }
-  flashActive = false;
-}
-
-function triggerFlash() {
-  if (flashActive) {return;}
-  if (!flashOverlay) {return;}
-  flashActive = true;
-  flashOverlay.classList.add('flash-success');
-  flashTimeout = setTimeout(() => {
-    flashOverlay.classList.remove('flash-success');
-    flashActive = false;
-    flashTimeout = null;
-  }, 500);
-}
-
 function startSilhouetteLoop() {
   stopSilhouetteLoop();
   overlayCtx = overlayCanvas.getContext('2d');
   function loop() {
-    if (!sessionActive) {return;}
+    if (!sessionActive) { return; }
     silhouetteRAF = requestAnimationFrame(loop);
     overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
     const now = performance.now();
@@ -237,8 +238,54 @@ function stopSilhouetteLoop() {
   }
 }
 
+function startMonitor() {
+  stopMonitor();
+  monitorTimer = setInterval(() => {
+    if (!sessionActive) { return; }
+
+    const now = performance.now();
+    const faceGone = now - lastFaceTime > NO_FACE_TIMEOUT;
+    const monState = gatekeeper.getState();
+    const monMode = gatekeeper.getMode();
+
+    if (faceGone) {
+      clearAllFlash();
+      flashOverlay.classList.add('flash-idle');
+      if (faceEverDetected) {
+        showError(true, 'No Face Detected', 'Please position your face in the camera frame');
+      } else {
+        showError(false);
+      }
+    } else if (monState === STATES.MIC_OPEN && monMode === 'I') {
+      if (lastMouthWidth <= restingMouthWidth * 1.15) {
+        showError(true, 'Not Spreading', 'Spread your lips wide and grin for /i/');
+      } else if (lastLar >= lar_threshold.high) {
+        showError(true, 'Too Wide', 'Narrow your mouth — you are opening for /a/');
+      } else {
+        showError(false);
+      }
+    } else if (monState === STATES.MIC_OPEN && monMode === 'A') {
+      if (lastLar < lar_threshold.high) {
+        showError(true, 'Mouth Closing', 'Keep your mouth wide for /a/');
+      } else {
+        showError(false);
+      }
+    } else if (!fallbackMode && lastLar <= lar_threshold.low) {
+      showError(true, 'Mouth Closed', 'Open your mouth to begin');
+    } else if (!fallbackMode) {
+      showError(false);
+    }
+  }, 500);
+}
+
+function stopMonitor() {
+  if (monitorTimer) {
+    clearInterval(monitorTimer);
+    monitorTimer = null;
+  }
+}
+
 gatekeeper.onEnter(STATES.MIC_OPEN, () => {
-  console.log('[GateKeeper] Entered MIC_OPEN, mode:', gatekeeper.getMode());
   setVowelIndicator(gatekeeper.getMode());
   openAudioGate();
   startPitchPolling();
@@ -259,7 +306,7 @@ gatekeeper.onEnter(STATES.IDLE, () => {
 });
 
 function onFaceLandmarks(landmarks) {
-  if (!sessionActive || !landmarks) {return;}
+  if (!sessionActive || !landmarks) { return; }
   faceEverDetected = true;
 
   lastFaceTime = performance.now();
@@ -333,7 +380,6 @@ function onFaceLandmarks(landmarks) {
       if (outOfThresholdSince === 0) {
         outOfThresholdSince = performance.now();
       } else if (performance.now() - outOfThresholdSince > 300) {
-        console.log(`[LAR Monitor] Fallback triggered: mode=A, LAR=${lastLar.toFixed(2)}, threshold=${lar_threshold.high}`);
         triggerFallback('A');
       }
     } else {
@@ -347,7 +393,6 @@ function onFaceLandmarks(landmarks) {
       if (outOfThresholdSince === 0) {
         outOfThresholdSince = performance.now();
       } else if (performance.now() - outOfThresholdSince > 300) {
-        console.log(`[LAR Monitor] Fallback triggered: mode=I, LAR=${lastLar.toFixed(2)}, spread=${(lastMouthWidth / restingMouthWidth).toFixed(2)}x`);
         triggerFallback('I');
       }
     } else {
@@ -365,7 +410,7 @@ function onFaceLandmarks(landmarks) {
     flashOverlay.classList.add('flash-warning');
   } else if (isF0InRange && isF0Stable) {
     flashOverlay.classList.remove('flash-warning', 'flash-error', 'flash-idle');
-    triggerFlash();
+    triggerFlash('success');
   } else {
     clearAllFlash();
   }
@@ -396,53 +441,6 @@ function onFaceLandmarks(landmarks) {
   }
 }
 
-function startMonitor() {
-  stopMonitor();
-  monitorTimer = setInterval(() => {
-    if (!sessionActive) {return;}
-
-    const now = performance.now();
-    const faceGone = now - lastFaceTime > NO_FACE_TIMEOUT;
-    const monState = gatekeeper.getState();
-    const monMode = gatekeeper.getMode();
-
-    if (faceGone) {
-      clearAllFlash();
-      flashOverlay.classList.add('flash-idle');
-      if (faceEverDetected) {
-        showError(true, 'No Face Detected', 'Please position your face in the camera frame');
-      } else {
-        showError(false);
-      }
-    } else if (monState === STATES.MIC_OPEN && monMode === 'I') {
-      if (lastMouthWidth <= restingMouthWidth * 1.15) {
-        showError(true, 'Not Spreading', 'Spread your lips wide and grin for /i/');
-      } else if (lastLar >= lar_threshold.high) {
-        showError(true, 'Too Wide', 'Narrow your mouth — you are opening for /a/');
-      } else {
-        showError(false);
-      }
-    } else if (monState === STATES.MIC_OPEN && monMode === 'A') {
-      if (lastLar < lar_threshold.high) {
-        showError(true, 'Mouth Closing', 'Keep your mouth wide for /a/');
-      } else {
-        showError(false);
-      }
-    } else if (!fallbackMode && lastLar <= lar_threshold.low) {
-      showError(true, 'Mouth Closed', 'Open your mouth to begin');
-    } else if (!fallbackMode) {
-      showError(false);
-    }
-  }, 500);
-}
-
-function stopMonitor() {
-  if (monitorTimer) {
-    clearInterval(monitorTimer);
-    monitorTimer = null;
-  }
-}
-
 async function startSession() {
   sessionActive = true;
   restingMouthWidth = Infinity;
@@ -455,8 +453,8 @@ async function startSession() {
   updateAccuracy(0);
   updateStars(0);
 
-  overlayCanvas.width = cameraFeed.clientWidth;
-  overlayCanvas.height = cameraFeed.clientHeight;
+  overlayCanvas.width = overlayCanvas.clientWidth;
+  overlayCanvas.height = overlayCanvas.clientHeight;
 
   preGrantAudioPermission();
 
@@ -465,30 +463,46 @@ async function startSession() {
 
   gatekeeper.transitionTo(STATES.CAMERA_ACTIVE);
 
-  cameraController = initCamera(cameraFeed, onFaceLandmarks, showCameraError);
-  if (cameraController) {
-    cameraController.start();
+  cameraController = initCamera(cameraFeed, {
+    onFaceLandmarks,
+    onNoFace: () => {},
+  });
+
+  try {
+    await cameraController.start();
+  } catch (err) {
+    showCameraError(err);
+    sessionActive = false;
   }
 }
 
 function stopSession() {
   sessionActive = false;
+
   stopSilhouetteLoop();
   stopMonitor();
   stopPitchPolling();
 
   gatekeeper.reset();
 
-  if (cameraController) {
-    cameraController.stop();
-    cameraController = null;
-  }
-
   showError(false);
   isF0InRange = false;
   isF0Stable = false;
   isF0Shrill = false;
   clearAllFlash();
+
+  if (cameraController) {
+    cameraController.stop();
+    cameraController = null;
+  }
+
+  if (audioInitialized) {
+    closeAudioStream();
+    audioInitialized = false;
+  }
+
+  updateLar(0);
+  updatePitch(0);
 }
 
 btnStart.addEventListener('click', startSession);
