@@ -32,11 +32,11 @@ export async function saveProfile(profile) {
   });
 }
 
-export async function getProfile(userId) {
+export async function getProfile(user_id) {
   const db = await openDB();
   const tx = db.transaction(STORE_PROFILES, 'readonly');
   const store = tx.objectStore(STORE_PROFILES);
-  const request = store.get(userId);
+  const request = store.get(user_id);
   return new Promise(function (resolve, reject) {
     request.onsuccess = function () { resolve(request.result || null); };
     request.onerror = function () { reject(request.error); };

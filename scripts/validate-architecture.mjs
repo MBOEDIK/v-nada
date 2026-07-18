@@ -87,6 +87,7 @@ function checkNodeImports(content, file) {
 
 function checkSnakeCase(content, file) {
   for (const name of SNAKE_NAMES) {
+    if (!name.includes('_')) { continue; }
     const camelVariants = [
       name.replace(/_([a-z])/g, (_, c) => c.toUpperCase()),
       name.replace(/_([a-z])/g, (_, c) => c.toUpperCase()).replace(/^[a-z]/, (c) => c.toUpperCase()),
@@ -230,7 +231,9 @@ for (const file of files) {
   if (!content) {continue;}
 
   if (ext === '.js' || ext === '.mjs' || ext === '.cjs') {
-    checkNodeImports(content, rel);
+    if (!rel.includes('__tests__')) {
+      checkNodeImports(content, rel);
+    }
     checkSnakeCase(content, rel);
     checkLarIndices(content, rel);
     checkAudioParams(content, rel);

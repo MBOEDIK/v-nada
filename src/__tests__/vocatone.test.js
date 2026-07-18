@@ -4,7 +4,7 @@ import { VocaTone } from '../games/vocatone.js';
 function makeMockCanvas() {
   const canvas = document.createElement('canvas');
   canvas.width = 360;
-  canvas.height = 640;
+  canvas.height = 480;
   return canvas;
 }
 
