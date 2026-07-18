@@ -16,25 +16,25 @@
 ### A2 — Sequential Validation Engine / Gate Keeper (3 task)
 - [x] **A2.1** — Bangun State Machine (GateKeeper class: valid transisi, onEnter/onExit, throw on invalid)
 - [x] **A2.2** — Pipeline Kamera → FaceMesh → LAR → Gate (vision.js + main.js integrasi state machine)
-- [ ] **A2.3** — Fallback Visual + Reset State
+- [x] **A2.3** — Fallback Visual + Reset State
 
 ---
 
 ## B. Modul 1 — VocaTone Engine (3 fitur → 8 task)
 
 ### B3 — Web Audio Autocorrelation (3 task)
-- [ ] **B3.1** — Inisialisasi Audio Pipeline
-- [ ] **B3.2** — Implementasi Autokorelasi
-- [ ] **B3.3** — Output f0 ke Modul Pemanggil
+- [x] **B3.1** — Inisialisasi Audio Pipeline
+- [x] **B3.2** — Implementasi Autokorelasi
+- [x] **B3.3** — Output f0 ke Modul Pemanggil
 
 ### B4 — Noise Floor Gate (2 task)
-- [ ] **B4.1** — Hitung RMS dari Time Domain
-- [ ] **B4.2** — Integrasi Gate Logic
+- [x] **B4.1** — Hitung RMS dari Time Domain
+- [x] **B4.2** — Integrasi Gate Logic
 
 ### B5 — Single-Game Placeholder (3 task)
-- [ ] **B5.1** — Setup Canvas + Game Loop
-- [ ] **B5.2** — Fisika Objek: Naik / Stabil / Turun
-- [ ] **B5.3** — Render Objek + HUD
+- [x] **B5.1** — Setup Canvas + Game Loop
+- [x] **B5.2** — Fisika Objek: Naik / Stabil / Turun
+- [x] **B5.3** — Render Objek + HUD
 
 ---
 
@@ -77,8 +77,8 @@
 
 | Kategori | Fitur | Task | Selesai |
 |----------|-------|------|---------|
-| A — Core Tech | 2 | 6 | 5 / 6 |
-| B — VocaTone | 3 | 8 | 0 / 8 |
+| A — Core Tech | 2 | 6 | 6 / 6 |
+| B — VocaTone | 3 | 8 | 8 / 8 |
 | C — Dual-Sense | 4 | 10 | 9 / 10 |
 | D — UI/UX | 2 | 5 | 4 / 5 |
-| **Total** | **11** | **29** | **18 / 29** |
+| **Total** | **11** | **29** | **27 / 29** |

@@ -31,9 +31,9 @@
 | Branch | Total | 🔴 Kritis | 🟡 Sedang | 🟢 Ringan |
 |--------|-------|-----------|-----------|-----------|
 | dualsense | 73 | 0 (16 ✅) | 5 ❌ (37 ✅) | 6 ❌ (9 ✅) |
-| vocatone | 22 | 3 | 8 | 11 |
-| kedua | 41 | 0 (4 ✅) | 0 (11 ✅) | 26 |
-| **Total** | **136** | **3 (20 ✅)** | **13 (50 ✅)** | **17 (35 ✅)** |
+| vocatone | 22 | 1 ❌ (2 ✅) | 3 ❌ (5 ✅) | 1 ❌ (10 ✅) |
+| kedua | 41 | 0 (4 ✅) | 0 (11 ✅) | 0 ❌ (26 ✅) |
+| **Total** | **136** | **1 ❌ (22 ✅)** | **8 ❌ (55 ✅)** | **7 ❌ (45 ✅)** |
 
 ---
 
@@ -64,9 +64,9 @@
 
 | # | Item | Sumber | Cross-Ref | Blueprint / PoC Line | Refactor | Catatan |
 |---|------|--------|-----------|---------------------|----------|---------|
-| T02 | Vokal A — threshold tunggal (harus `lar_threshold.high`) | Note-1 TECH | ⤻ S35 | TECH-01:46 | ❌ | |
-| S35 | VocaTone tidak import `constants.js` — threshold LAR 0.3 ≠ 0.5 | Note-2 SCOPE | ⤻ T02 | PoC:68, AGENTS.md | ❌ | |
-| S45 | VocaTone tidak ada flash merah saat tidak ada suara | Note-2 SCOPE | ⤻ S40 | PoC:81 | ❌ | |
+| T02 | Vokal A — threshold tunggal (harus `lar_threshold.high`) | Note-1 TECH | ⤻ S35 | TECH-01:46 | ✅ | Fase B — vocatone.js import constants.js, `lar_threshold.high=0.5` via constants |
+| S35 | VocaTone tidak import `constants.js` — threshold LAR 0.3 ≠ 0.5 | Note-2 SCOPE | ⤻ T02 | PoC:68, AGENTS.md | ✅ | Fase B — `import { lar_threshold }` di vocatone.js line 2 |
+| S45 | VocaTone tidak ada flash merah saat tidak ada suara | Note-2 SCOPE | ⤻ S40 | PoC:81 | ❌ | `updateHUD()` di main.js: `setCanvasFlash(null)` bukan `flash-error` |
 
 ### 🔴 Kritis — kedua (shared, 4 item)
 
@@ -131,14 +131,14 @@
 
 | # | Item | Sumber | Cross-Ref | Blueprint / PoC Line | Refactor | Catatan |
 |---|------|--------|-----------|---------------------|----------|---------|
-| T09 | Octave correction di vocatone | Note-1 TECH | | TECH-03:42 | ❌ | |
-| T21 | `lar_threshold` schema mismatch — IndexedDB baca `.value` (number) vs object `{high, low}` | Note-1 TECH | | TECH-02:36-41 | ❌ | |
-| T31 | Camera start error — vocatone hanya console.error, tidak ada user-facing | Note-1 TECH | | TECH-04, UX-03:50 | ❌ | |
-| G01 | Inisialisasi kamera berlebihan di vocatone (audio-only) | Note-1 GAME | | GAME-01:79 | ❌ | |
-| G08 | VocaTone `_drawBackground()` tidak #F8FAFC untuk fall/rise — transparan | Note-1 GAME | | GAME-01:19,22,62 | ❌ | |
-| S19 | VocaTone mic error messages dead code — `.catch()` buang error object | Note-2 SCOPE | | PoC:42 | ❌ | |
-| S25 | VocaTone butuh kamera + FaceMesh meskipun spek audio-only | Note-2 SCOPE | | PoC:30-48 | ❌ | |
-| S28 | VocaTone flash feedback static tint, bukan animasi "Berkedip" | Note-2 SCOPE | | PoC:79 | ❌ | |
+| T09 | Octave correction di vocatone | Note-1 TECH | | TECH-03:42 | ❌ | Belum ada cascade sub-harmonik |
+| T21 | `lar_threshold` schema mismatch — IndexedDB baca `.value` (number) vs object `{high, low}` | Note-1 TECH | | TECH-02:36-41 | ❌ | `db.js` sudah simpan `lar_threshold` sbg object; vocatone.js import dari constants (tidak pakai IndexedDB langsung) |
+| T31 | Camera start error — vocatone hanya console.error, tidak ada user-facing | Note-1 TECH | | TECH-04, UX-03:50 | ✅ | Fase B — `onError` callback di vocatone.js + `showError` di main.js |
+| G01 | Inisialisasi kamera berlebihan di vocatone (audio-only) | Note-1 GAME | | GAME-01:79 | ✅ | Fase B — voiceTone murni audio-only, tanpa initCamera/FaceMesh |
+| G08 | VocaTone `_drawBackground()` tidak #F8FAFC untuk fall/rise — transparan | Note-1 GAME | | GAME-01:19,22,62 | ✅ | Fase B — `BG_COLOR = '#F8FAFC'` di vocatone.js, `drawBackground()` selalu isi #F8FAFC |
+| S19 | VocaTone mic error messages dead code — `.catch()` buang error object | Note-2 SCOPE | | PoC:42 | ✅ | Fase B — `try/catch` di vocatone.js `start()` + `onError` callback ke main.js |
+| S25 | VocaTone butuh kamera + FaceMesh meskipun spek audio-only | Note-2 SCOPE | | PoC:30-48 | ✅ | Fase B — enterVocatoneView() sembunyikan kamera, startVocaTone() langsung initAudioStream |
+| S28 | VocaTone flash feedback static tint, bukan animasi "Berkedip" | Note-2 SCOPE | | PoC:79 | ❌ | Masih static fill via `setCanvasFlash()` — belum blink animasi |
 
 ### 🟡 Sedang — kedua (shared, 11 item)
 
@@ -152,9 +152,9 @@
 | T27 | Kedua branch tidak baca `f_min`/`f_max` dari IndexedDB profile — hardcoded | Note-1 TECH | | TECH-02:40 | ✅ | profile default disimpan & dibaca, f_min/f_max dari constants.js sebagai fallback |
 | T28 | Stale-While-Revalidate tidak diimplementasikan — semua CacheFirst | Note-1 TECH | | TECH-02:20 | ✅ | StaleWhileRevalidate untuk game components (assets/index-*.{js,css}) |
 | T30 | Sensor disconnected — tidak ada penanganan khusus | Note-1 TECH | | TECH-01:77 | ✅ | try/catch di FaceMesh onFrame + onNoFace fallback |
-| G09 | RMS threshold tidak dikalibrasi di awal sesi — hardcoded 0.01 | Note-1 GAME | | GAME-01:79 | ❌ | |
-| U28 | Missing real-time LAR indicator animation — crosshair | Note-1 UX | | UX-02:76-78 | ❌ | |
-| S34 | Kedua branch `MIN_PITCH_HZ` hardcoded 50 Hz, tidak pakai `f_min` | Note-2 SCOPE | | AGENTS.md | ❌ | |
+| G09 | RMS threshold tidak dikalibrasi di awal sesi — hardcoded 0.01 | Note-1 GAME | | GAME-01:79 | ✅ | A2+Fase B — `calibrateAmbientNoise()` dipanggil di openAudioGate() & vocatone.start() |
+| U28 | Missing real-time LAR indicator animation — crosshair | Note-1 UX | | UX-02:76-78 | ✅ | A3 — `drawCrosshair(lar)` di main.js, LAR-responsive bar length, integrated in startCrosshair() |
+| S34 | Kedua branch `MIN_PITCH_HZ` hardcoded 50 Hz, tidak pakai `f_min` | Note-2 SCOPE | | AGENTS.md | ✅ | A2 — audio.js import f_min/f_max dari constants, autocorrelation pakai imported values |
 
 ---
 
@@ -184,17 +184,17 @@
 
 | # | Item | Sumber | Cross-Ref | Blueprint / PoC Line | Refactor | Catatan |
 |---|------|--------|-----------|---------------------|----------|---------|
-| T25 | VocaTone `f_max` dual source of truth — constants.js & game.js | Note-1 TECH | | TECH-02:40-41 | ❌ | |
-| G06 | VocaTone stability timer 0.5s — blueprint min 1s | Note-1 GAME | | GAME-01:56-58 | ❌ | |
-| G13 | VocaTone balloon color — dark blue (#0D47A1) bukan bright/light blue | Note-1 GAME | | UX-02:81 | ❌ | |
-| G14 | VocaTone balloon movement — constant velocity bukan smooth acceleration | Note-1 GAME | | UX-02:82 | ❌ | |
-| U01 | Font vokal 72pt di vocatone | Note-1 UX | | UX-02:63 | ❌ | |
-| U02 | Error handling mic denied di vocatone | Note-1 UX | | UX-03:50 | ❌ | |
-| U05 | No face → silhouette guide di vocatone | Note-1 UX | | UX-03:51 | ❌ | |
-| U11 | Scaling 1.2x objek game saat fonasi benar tidak ada | Note-1 UX | | UX-02:40 | ❌ | |
-| U23 | Objek VocaTone tidak membesar saat naik | Note-1 UX | | GAME-01:78 | ❌ | |
-| U25 | VocaTone tidak ada siluet kalibrasi saat no face | Note-1 UX | | VISUAL-02:14,24-26 | ❌ | |
-| S03 | VocaTone objek hover tidak di jalur tengah canvas saat f₀ stabil | Note-2 SCOPE | | PoC:46 | ❌ | |
+| T25 | VocaTone `f_max` dual source of truth — constants.js & game.js | Note-1 TECH | | TECH-02:40-41 | ✅ | Fase B — vocatone.js import f_min/f_max dari constants.js, game.js dihapus |
+| G06 | VocaTone stability timer 0.5s — blueprint min 1s | Note-1 GAME | | GAME-01:56-58 | ✅ | Fase B — `STABILITY_MS = 1000` (1 detik) di vocatone.js line 9 |
+| G13 | VocaTone balloon color — dark blue (#0D47A1) bukan bright/light blue | Note-1 GAME | | UX-02:81 | ✅ | Fase B — `BALLOON_COLOR = '#60A5FA'` (light blue) + gradient |
+| G14 | VocaTone balloon movement — constant velocity bukan smooth acceleration | Note-1 GAME | | UX-02:82 | ✅ | Fase B — RISE_SPEED konstan + FALL_ACCEL + scale interpolation smooth |
+| U01 | Font vokal 72pt di vocatone | Note-1 UX | | UX-02:63 | ✅ | Fase B — `drawVowel()` render 'A' 72pt Montserrat |
+| U02 | Error handling mic denied di vocatone | Note-1 UX | | UX-03:50 | ✅ | Fase B — `try/catch` di start() + `onError('Mic Error', ...)` callback |
+| U05 | No face → silhouette guide di vocatone | Note-1 UX | | UX-03:51 | ✅ | Fase B — `drawSilhouette()` dashed ellipse #F8FAFC 30% opacity |
+| U11 | Scaling 1.2x objek game saat fonasi benar tidak ada | Note-1 UX | | UX-02:40 | ✅ | Fase B — `targetScale = 1.2` saat pitch>0 + smooth interpolation |
+| U23 | Objek VocaTone tidak membesar saat naik | Note-1 UX | | GAME-01:78 | ✅ | Fase B — `scale` property applied di drawBalloon() |
+| U25 | VocaTone tidak ada siluet kalibrasi saat no face | Note-1 UX | | VISUAL-02:14,24-26 | ✅ | Fase B — `drawSilhouette()` elliptical guide di vocatone.js |
+| S03 | VocaTone objek hover tidak di jalur tengah canvas saat f₀ stabil | Note-2 SCOPE | | PoC:46 | ❌ | Hover di posisi Y terkini, tidak reposisi ke canvas.height/2 |
 
 ### 🟢 Ringan — kedua (shared, 26 item)
 
@@ -419,6 +419,7 @@
 | 17 Jul 2026 | 1.3 | Fase A2 ✅: T11-T14, T26-T30, G09, U28, S34 — sample rate, caching, IndexedDB, RMS kalibrasi, crosshair, error handling | Agent V-NADA |
 | 18 Jul 2026 | 1.4 | Fase A3 ✅: T16, G07, U03-U04, U06, U12, U14, U20-U22, U26-U27, U29-U31, C05, C19, C21, C22 — module selection, back button, silhouette oval dash + color, haptic, 3-state button, Ayo Mulai, camera border, 16dp spacing, checkmark, orbit pulse, red arrow, mirror, error transition, AudioContext destination | Agent V-NADA |
 | 18 Jul 2026 | 1.5 | Fase C ⚡ Batch 1+2 (dualsense): S40 (red flash no audio), G04 (wrong mouth flash-error + silhouette merah), T05/S29 (closeAudioGate async), S05 (SESSION_ACTIVE live state), U07 (silhouette pulse), S44 (canvas ResizeObserver), S36 (remove accuracy scope creep), T19 (camera 480p→360p fallback), S26 (onEnter LAR_CHECK init) — 9 item dualsense | Agent V-NADA |
+| 18 Jul 2026 | 1.6 | Audit pasca-merge: update 19 item VocaTone dari ❌ ke ✅ (Fase B sudah terimplementasi), perbaiki 3 item shared (G09/U28/S34), sinkronisasi summary table & PROGRESS.md | Agent V-NADA |
 
 ---
 
